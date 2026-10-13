@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="EXT:structured_content/Resources/Private/Language/locallang_tca.xlf" date="2026-04-02T00:00:00Z" product-name="structured_content">
+        <body>
+            <trans-unit id="tab.ai_context">
+                <source>AI Context</source>
+            </trans-unit>
+            <trans-unit id="ai_context_audience.label">
+                <source>Audience</source>
+            </trans-unit>
+            <trans-unit id="ai_context_audience.description">
+                <source>Who is this content intended for? AI systems (e.g. the Business Agent) use this to filter content by target group — internal content won't appear in the public web chat.</source>
+            </trans-unit>
+            <trans-unit id="ai_context_tone.label">
+                <source>Tone</source>
+            </trans-unit>
+            <trans-unit id="ai_context_tone.description">
+                <source>How should AI systems communicate this content? The tone annotation guides the Business Agent's response style when referencing this content.</source>
+            </trans-unit>
+            <trans-unit id="ai_context_channels.label">
+                <source>Channels</source>
+            </trans-unit>
+            <trans-unit id="ai_context_channels.description">
+                <source>Which delivery channels may use this content? Unchecked channels will not receive this content. Leave empty to allow all channels. Values are inherited from parent pages — override here if needed.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

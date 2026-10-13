@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="EXT:structured_content/Resources/Private/Language/locallang.xlf" date="2026-04-01T00:00:00Z" product-name="structured_content">
+        <body>
+            <trans-unit id="relationships.title">
+                <source>Content Relationships</source>
+            </trans-unit>
+            <trans-unit id="form.table">
+                <source>Table</source>
+            </trans-unit>
+            <trans-unit id="form.table.placeholder">
+                <source>pages</source>
+            </trans-unit>
+            <trans-unit id="form.uid">
+                <source>UID</source>
+            </trans-unit>
+            <trans-unit id="form.uid.placeholder">
+                <source>1</source>
+            </trans-unit>
+            <trans-unit id="button.search">
+                <source>Search</source>
+            </trans-unit>
+            <trans-unit id="table.source">
+                <source>Source</source>
+            </trans-unit>
+            <trans-unit id="table.target">
+                <source>Target</source>
+            </trans-unit>
+            <trans-unit id="table.type">
+                <source>Type</source>
+            </trans-unit>
+            <trans-unit id="table.direction">
+                <source>Direction</source>
+            </trans-unit>
+            <trans-unit id="table.confidence">
+                <source>Confidence</source>
+            </trans-unit>
+            <trans-unit id="message.noRelations">
+                <source>No relations found for %s:%s.</source>
+            </trans-unit>
+            <trans-unit id="message.enterSearch">
+                <source>Enter a table name and UID to view content relationships.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type">
+                <source>Schema.org Type</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.auto">
+                <source>Auto-detect</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.group.article">
+                <source>── Article family ──</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.group.webpage">
+                <source>── WebPage family ──</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.group.other">
+                <source>── Other ──</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.auto.description">
+                <source>Schema-Typ aus Hero-Block, Slug oder Keywords automatisch bestimmen.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.Article.description">
+                <source>Allgemeiner Artikel ohne Blog-/News-Charakter.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.BlogPosting.description">
+                <source>Blog-Beitrag, typischerweise unter /blog/&lt;slug&gt;.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.NewsArticle.description">
+                <source>Pressemitteilung oder News-Artikel.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.TechArticle.description">
+                <source>Technische Anleitung oder Dokumentation.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.ScholarlyArticle.description">
+                <source>Wissenschaftlicher Artikel, Whitepaper oder Studie.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.Report.description">
+                <source>Marktanalyse, Geschäftsbericht oder Studienergebnis.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.SocialMediaPosting.description">
+                <source>Social-Media-Post als eigene Seite.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.WebPage.description">
+                <source>Standard-Webseite ohne speziellen Page-Type.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.AboutPage.description">
+                <source>Über-uns- / Unternehmens-Vorstellung.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.ContactPage.description">
+                <source>Kontaktseite mit Adresse, Formular oder Kontaktdaten.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.CollectionPage.description">
+                <source>Übersichts-/Indexseite mit Listen-Items (z.B. /blog-Index).</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.ItemPage.description">
+                <source>Detailseite zu einem einzelnen Element (z.B. Referenz oder Case-Study).</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.ProfilePage.description">
+                <source>Personenseite oder Mitarbeiter-Profil.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.QAPage.description">
+                <source>Frage-und-Antwort-Seite (eine Hauptfrage mit Antworten).</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.FAQPage.description">
+                <source>FAQ-Seite mit Q&amp;A-Liste — greift bei FAQ-Block automatisch.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.Product.description">
+                <source>Produktseite — greift automatisch bei Packages-Grid.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.HowTo.description">
+                <source>Schritt-für-Schritt-Anleitung.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.Organization.description">
+                <source>Organisationsseite — Root-Pages erhalten dies automatisch.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.LocalBusiness.description">
+                <source>Lokales Geschäft mit Adresse und Öffnungszeiten.</source>
+            </trans-unit>
+            <trans-unit id="pages.service_type">
+                <source>Service Type</source>
+            </trans-unit>
+            <trans-unit id="pages.service_type.description">
+                <source>Schema.org/Service serviceType (z.B. „Managed CMS", „Process Automation", „DevSecOps Consulting"). Hilft KI-Agenten und Suche, das Angebot semantisch einzuordnen.</source>
+            </trans-unit>
+            <trans-unit id="pages.service_category">
+                <source>Service Category</source>
+            </trans-unit>
+            <trans-unit id="pages.service_category.description">
+                <source>Schema.org/Service category (z.B. „IT Services", „Software Engineering", „AI Integration"). Übergeordnete Kategorie zur serviceType.</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.group.software">
+                <source>── Software ──</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.SoftwareApplication.description">
+                <source>Software-Anwendung mit Repository-URL, Version und Lizenz (z.B. ein OSS-Tool oder MCP-Server).</source>
+            </trans-unit>
+            <trans-unit id="pages.schema_type.SoftwareSourceCode.description">
+                <source>Quellcode-Sample oder Library, die als Code verbreitet wird (z.B. ein Code-Snippet oder eine Library-Doku).</source>
+            </trans-unit>
+            <trans-unit id="pages.code_repository">
+                <source>Code Repository</source>
+            </trans-unit>
+            <trans-unit id="pages.code_repository.description">
+                <source>Schema.org/SoftwareSourceCode codeRepository — vollständige URL zum Code-Repository (z.B. https://github.com/koh/webmcp). Wenn gesetzt, aktiviert es das SoftwareApplication-Schema automatisch.</source>
+            </trans-unit>
+            <trans-unit id="pages.programming_language">
+                <source>Programming Language</source>
+            </trans-unit>
+            <trans-unit id="pages.programming_language.description">
+                <source>Schema.org/SoftwareSourceCode programmingLanguage. Komma-separiert für mehrere Sprachen (z.B. „PHP, JavaScript, TypeScript").</source>
+            </trans-unit>
+            <trans-unit id="pages.software_version">
+                <source>Software Version</source>
+            </trans-unit>
+            <trans-unit id="pages.software_version.description">
+                <source>Schema.org/SoftwareApplication softwareVersion (z.B. „0.9.7" oder „v1.0").</source>
+            </trans-unit>
+            <trans-unit id="pages.software_license">
+                <source>License</source>
+            </trans-unit>
+            <trans-unit id="pages.software_license.description">
+                <source>Schema.org/CreativeWork license — entweder eine SPDX-Kennung (z.B. „MIT", „GPL-2.0-or-later", „Apache-2.0") oder eine vollständige Lizenz-URL. SPDX-Werte werden automatisch zu spdx.org/licenses/&lt;ID&gt;.html erweitert.</source>
+            </trans-unit>
+            <trans-unit id="pages.operating_system">
+                <source>Operating System</source>
+            </trans-unit>
+            <trans-unit id="pages.operating_system.description">
+                <source>Schema.org/SoftwareApplication operatingSystem (z.B. „Web Browser", „Linux", „macOS, Linux", „Cross-platform").</source>
+            </trans-unit>
+            <trans-unit id="pages.author_records">
+                <source>Authors (Person Records)</source>
+            </trans-unit>
+            <trans-unit id="pages.author_records.description">
+                <source>Verknuepfte Personen-Datensaetze als Autoren dieser Seite. Mehrfachauswahl moeglich, Reihenfolge bestimmt JSON-LD-Reihenfolge. Wird als Schema.org author Property im Article/SoftwareApplication-JSON-LD ausgegeben. Faellt auf das pages.author Textfeld zurueck wenn leer.</source>
+            </trans-unit>
+            <trans-unit id="pages.same_as">
+                <source>sameAs URLs</source>
+            </trans-unit>
+            <trans-unit id="pages.same_as.description">
+                <source>Externe Identitaeten dieser Seite/Entity — eine URL pro Zeile. Wird als Schema.org sameAs Property im WebPage/Article/Service-JSON-LD ausgegeben. Typische Einsaetze: extensions.typo3.org-Listing, packagist.org-Paketseite, Wikipedia, Wikidata. NIE die eigene Page-URL eintragen (dafuer ist `url`).</source>
+            </trans-unit>
+            <trans-unit id="pages.about">
+                <source>About (Schema.org-Subjects)</source>
+            </trans-unit>
+            <trans-unit id="pages.about.description">
+                <source>Strukturierte Liste der Themen / Entitaeten, mit denen sich diese Seite beschaeftigt (Schema.org about). Pro Eintrag: Schema-Klasse (Thing/SoftwareApplication/...), Name + sameAs-URL (z.B. Wikipedia). Wenn Eintraege gepflegt sind, ersetzen sie die Default-Organization-Referenz im about-Property.</source>
+            </trans-unit>
+            <trans-unit id="pages.llms_featured">
+                <source>Feature in llms.txt</source>
+            </trans-unit>
+            <trans-unit id="pages.llms_featured.description">
+                <source>Lists this page in the featured section at the top of /llms.txt, in page-tree order (at most llmsTxt.featuredLimit pages, default 15). Set on the default-language page; every language features the same pages.</source>
+            </trans-unit>
+            <trans-unit id="sys_category.slug">
+                <source>URL Slug</source>
+            </trans-unit>
+            <trans-unit id="sys_category.slug.description">
+                <source>Auto-generated from the category title. Used by the blog filter URL (/blog?cat=&lt;slug&gt;) and emitted as Schema.org articleSection on linked pages.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

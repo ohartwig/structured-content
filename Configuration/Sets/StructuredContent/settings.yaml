@@ -1,0 +1,37 @@
+structuredContent:
+  enabled: true
+  defaults:
+    audience: 'customer'
+    tone: 'informational'
+    channels: ''
+  fieldRestrictions: {}
+  schema:
+    enabled: true
+    autoDetect: true
+    priceRange: ''
+    areaServed: ''
+    openingHours: ''
+    serviceTypes: ''
+    searchActionUrl: ''
+    legalName: ''
+    streetAddress: ''
+    postalCode: ''
+    addressRegion: ''
+    phone: ''
+    vatID: ''
+  schemaMapping: {}
+  jsonLd:
+    enabled: true
+  llmsTxt:
+    enabled: true
+    tagline: ''
+    contactEmail: ''
+    contactLocation: ''
+    linkedinUrl: ''
+    githubUrl: ''
+    fullDumpEnabled: true
+    fullDumpMaxPages: 100
+    featuredLimit: 15
+    featuredGroupLabel: ''
+    postListLimit: 30
+    archiveLinkLabel: ''

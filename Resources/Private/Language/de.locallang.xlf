@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" target-language="de" datatype="plaintext" original="EXT:structured_content/Resources/Private/Language/locallang.xlf" date="2026-09-29T00:00:00Z" product-name="structured_content">
+        <body>
+            <trans-unit id="pages.llms_featured">
+                <source>Feature in llms.txt</source>
+                <target>In llms.txt hervorheben</target>
+            </trans-unit>
+            <trans-unit id="pages.llms_featured.description">
+                <source>Lists this page in the featured section at the top of /llms.txt, in page-tree order (at most llmsTxt.featuredLimit pages, default 15). Set on the default-language page; every language features the same pages.</source>
+                <target>Fuehrt diese Seite im Abschnitt der empfohlenen Seiten oben in /llms.txt, in Seitenbaum-Reihenfolge (hoechstens llmsTxt.featuredLimit Seiten, Standard 15). Wird an der Seite der Standardsprache gesetzt; jede Sprache hebt dieselben Seiten hervor.</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

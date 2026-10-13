@@ -1,0 +1,66 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+
+<h1><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:relationships.title" /></h1>
+
+<form method="post" action="{be:moduleLink(route: 'content_structuredcontent')}" class="mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-auto">
+            <label for="table" class="form-label"><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:form.table" /></label>
+            <input type="text" id="table" name="table" value="{table}" class="form-control" placeholder="{f:translate(key: 'LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:form.table.placeholder')}" />
+        </div>
+        <div class="col-auto">
+            <label for="uid" class="form-label"><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:form.uid" /></label>
+            <input type="number" id="uid" name="uid" value="{uid}" class="form-control" placeholder="{f:translate(key: 'LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:form.uid.placeholder')}" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary"><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:button.search" /></button>
+        </div>
+    </div>
+</form>
+
+<f:if condition="{uid}">
+    <f:then>
+        <f:if condition="{relations}">
+            <f:then>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:table.source" /></th>
+                            <th><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:table.target" /></th>
+                            <th><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:table.type" /></th>
+                            <th><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:table.direction" /></th>
+                            <th><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:table.confidence" /></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <f:for each="{relations}" as="relation">
+                            <tr>
+                                <td>{relation.sourceTable}:{relation.sourceUid}</td>
+                                <td>{relation.targetTable}:{relation.targetUid}</td>
+                                <td>{relation.type}</td>
+                                <td>{relation.direction}</td>
+                                <td>{relation.confidence}</td>
+                            </tr>
+                        </f:for>
+                    </tbody>
+                </table>
+            </f:then>
+            <f:else>
+                <div class="callout callout-info">
+                    <div class="callout-body"><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:message.noRelations" arguments="{0: table, 1: uid}" /></div>
+                </div>
+            </f:else>
+        </f:if>
+    </f:then>
+    <f:else>
+        <div class="callout callout-info">
+            <div class="callout-body"><f:translate key="LLL:EXT:structured_content/Resources/Private/Language/locallang.xlf:message.enterSearch" /></div>
+        </div>
+    </f:else>
+</f:if>
+
+</html>

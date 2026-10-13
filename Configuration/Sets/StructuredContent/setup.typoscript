@@ -1,0 +1,30 @@
+# Glossary term pages (featdd/dpn-glossary) render on the glossary listing
+# page, so they inherit its description: every term page carried the same
+# "n terms from ..." text. dpn-glossary only sets the term's own
+# meta_description, which is rarely maintained, and EXT:seo adds the listing
+# page's description from the page record. Without `replace` a value set here
+# never reaches the tag. It now carries the term's meta description, else its
+# definition, else its tooltip (GlossaryTermService::describeTerm), and
+# og:description follows it.
+#
+# The routing argument is the uid of the default-language term; the service
+# reads the record in the page language.
+#
+# Null-safe on purpose: the frontend TypoScript is also built in backend
+# requests (a backend module that renders a page's TypoScript), and those carry
+# no page arguments. `request.getPageArguments().getArguments()` then aborted
+# the whole module with "Unable to call method getArguments of non-object"
+# (500 in the page module of the pilot site, 2026-10-02).
+[traverse(request.getPageArguments()?.getArguments() ?? [], 'tx_dpnglossary_glossary/term') != '']
+    page.meta.description >
+    page.meta.description {
+        cObject = USER
+        cObject {
+            userFunc = Koh\StructuredContent\Presentation\UserFunction\GlossaryTermMetaDescription->render
+            maxLength = 155
+        }
+        replace = 1
+    }
+    page.meta.og:description < page.meta.description
+    page.meta.og:description.attribute = property
+[END]

@@ -1,0 +1,8 @@
+# Release configuration for yasrt; the shared defaults come from the CI
+# component. Only what this repository does differently is stated here.
+product: extension
+versioning:
+  # The package continues moselwal/structured-content, whose last release was 2.13.4,
+  # under a new name and a fresh history; the line continues with the next
+  # minor instead of starting over.
+  initial: "2.14.0"

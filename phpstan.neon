@@ -1,0 +1,10 @@
+# Level und Regelsatz kommen aus dem geteilten Standard in koh/dev, damit
+# eine Änderung dort dieses Repository erreicht. Lokal bleiben nur die Pfade —
+# die geteilte Datei lässt sie bewusst weg, weil ein relativer Pfad darin
+# innerhalb von vendor/ auflösen würde.
+includes:
+  - vendor/koh/dev-typo3/config/typo3/phpstan.neon
+
+parameters:
+  paths:
+    - Classes

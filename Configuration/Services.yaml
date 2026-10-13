@@ -1,0 +1,83 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Koh\StructuredContent\:
+    resource: '../Classes/'
+    exclude: '../Classes/Domain/Model/*'
+
+  _instanceof:
+    Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface:
+      tags: ['structured_content.schema_generator']
+
+  Koh\StructuredContent\Application\Service\SchemaOrgService:
+    arguments:
+      $generators: !tagged_iterator structured_content.schema_generator
+
+  Koh\StructuredContent\Domain\Contract\RelationshipRepositoryInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\DoctrineRelationshipRepository
+
+  # Der Seitenbaum-Port. LlmsTxtGeneratorService hat die vier Abfragen frueher
+  # selbst gefuehrt — mit ConnectionPool, GeneralUtility und den
+  # Restriction-Containern in der Application-Schicht, die laut deptrac nur
+  # Domain sehen darf.
+  Koh\StructuredContent\Domain\Contract\PageTreeRepositoryInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\PageTreeRepository
+
+  Koh\StructuredContent\Domain\Contract\EventDispatcherInterface:
+    alias: Koh\StructuredContent\Infrastructure\Adapter\PsrEventDispatcher
+
+  Koh\StructuredContent\Domain\Contract\SchemaMappingConfigurableInterface:
+    alias: Koh\StructuredContent\Infrastructure\SchemaOrg\ContentBlockSchemaMapper
+
+  Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\DoctrineGlossaryTermRepository
+
+  # USER cObject for the meta description of glossary term pages. Public, so
+  # ContentObjectRenderer gets the container instance (and the shared
+  # GlossaryTermService with its per-request caches) instead of reflection.
+  Koh\StructuredContent\Presentation\UserFunction\GlossaryTermMetaDescription:
+    public: true
+
+  # ContextResolver is fetched via GeneralUtility::makeInstance() from the
+  # DataHandlerHook (which is instantiated outside DI context). Marking the
+  # concrete service public ensures makeInstance() finds it in the container
+  # with autowired constructor args; without this it falls back to reflection
+  # and fails with ArgumentCountError on the two required services.
+  Koh\StructuredContent\Application\Service\ContextResolver:
+    public: true
+
+  Koh\StructuredContent\Domain\Contract\ContextResolverInterface:
+    alias: Koh\StructuredContent\Application\Service\ContextResolver
+
+  Koh\StructuredContent\Domain\Contract\ContextConfigurationProviderInterface:
+    alias: Koh\StructuredContent\Infrastructure\Configuration\SiteConfigurationProvider
+
+  Koh\StructuredContent\Domain\Contract\PageRootlineProviderInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\Typo3PageRootlineProvider
+
+  Koh\StructuredContent\Domain\Contract\FreshnessEnricherInterface:
+    alias: Koh\StructuredContent\Infrastructure\Enrichment\FreshnessSignalEnricher
+
+  Koh\StructuredContent\Domain\Contract\CategoryRepositoryInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\DoctrineCategoryRepository
+
+  Koh\StructuredContent\Domain\Contract\AuthoredPagesRepositoryInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\DoctrineAuthoredPagesRepository
+
+  Koh\StructuredContent\Domain\Contract\EpisodeGuestsRepositoryInterface:
+    alias: Koh\StructuredContent\Infrastructure\Persistence\DoctrineEpisodeGuestsRepository
+
+  Koh\StructuredContent\Presentation\Middleware\JsonLdInjectorMiddleware:
+    arguments:
+      $cache: '@cache.structured_content_schema'
+
+  Koh\StructuredContent\Presentation\Controller\RelationshipController:
+    public: true
+
+  cache.structured_content_schema:
+    class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+    factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
+    arguments: ['structured_content_schema']

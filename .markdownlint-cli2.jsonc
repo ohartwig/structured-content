@@ -1,0 +1,17 @@
+{
+  "ignores": [
+    "vendor/**",
+    ".composer/**",
+    "node_modules/**",
+    ".Build/**",
+    "var/**",
+    "CHANGELOG.md",
+    ".gitlab/issue_templates/**",
+    ".gitlab/merge_request_templates/**",
+    "SECURITY.md"
+  ],
+  "config": {
+    "MD013": false,
+    "MD060": false
+  }
+}
