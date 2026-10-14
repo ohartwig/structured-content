@@ -189,7 +189,10 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
 
         $jsonLdOutput = $this->buildGraphScriptTag($documents);
 
-        $this->cache->set($cacheIdentifier, $jsonLdOutput);
+        // Tagged with the page: TYPO3 flushes the "pages" cache group by
+        // pageId_<uid> whenever a record on the page is saved or published,
+        // and the DataHandler hook flushes the same tag for schema records.
+        $this->cache->set($cacheIdentifier, $jsonLdOutput, ['pageId_' . $pageUid]);
 
         return $this->injectJsonLd($response, $jsonLdOutput, $request);
     }

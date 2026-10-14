@@ -56,6 +56,9 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
     /** @var array<string, mixed> */
     private array $cacheEntries = [];
 
+    /** @var array<string, list<string>> */
+    private array $cacheTags = [];
+
     /** @var list<JsonLdDocument> */
     private array $documents = [];
 
@@ -106,8 +109,9 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
 
         $cache = $this->createStub(FrontendInterface::class);
         $cache->method('get')->willReturnCallback(fn (string $key): mixed => $this->cacheEntries[$key] ?? false);
-        $cache->method('set')->willReturnCallback(function (string $key, mixed $value): void {
+        $cache->method('set')->willReturnCallback(function (string $key, mixed $value, array $tags = []): void {
             $this->cacheEntries[$key] = $value;
+            $this->cacheTags[$key] = $tags;
         });
 
         // `FreshnessSignal` ist final, also kann ein gedoubelter Anreicherer
@@ -355,6 +359,22 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
 
         self::assertStringContainsString('About us', $body);
         self::assertStringNotContainsString('Something else entirely', $body);
+    }
+
+    /**
+     * Der Eintrag traegt das Tag der Seite. TYPO3 leert die Cache-Gruppe
+     * "pages" ueber pageId_<uid>, sobald etwas auf der Seite gespeichert
+     * oder veroeffentlicht wird; ohne Tag bliebe das alte JSON-LD bis zum
+     * Ablauf stehen.
+     */
+    #[Test]
+    public function theRememberedResultIsTaggedWithThePage(): void
+    {
+        $this->documents = [new JsonLdDocument('WebPage', ['name' => 'About us'])];
+
+        $this->middleware()->process($this->request(pageUid: 42), $this->handler());
+
+        self::assertSame([['pageId_42']], array_values($this->cacheTags));
     }
 
     /**
