@@ -68,7 +68,9 @@ final class GlossaryTermServiceTest extends TestCase
         });
         $repository->method('findFirstDescription')->willReturn('<p>Ein Vokabular fuer <b>strukturierte</b> Daten.</p>');
         $repository->method('findSynonymNames')->willReturn(['  Structured Data ', '', '   ', 'Strukturierte Daten']);
-        $repository->method('findPageSlug')->willReturn('/lexikon');
+        $repository->method('findPageSlug')->willReturnCallback(
+            static fn (int $uid, int $languageId = 0): string => 1 === $languageId ? '/glossary' : '/lexikon',
+        );
 
         return new GlossaryTermService($repository);
     }
@@ -199,6 +201,20 @@ final class GlossaryTermServiceTest extends TestCase
     public function aConfiguredGlossaryPageProvidesTheBasePath(): void
     {
         self::assertSame('/lexikon', $this->service()->resolveGlossaryBasePath($this->page()));
+    }
+
+    /**
+     * The base path follows the page's language: an English page links the
+     * English glossary slug. With the default-language slug behind /en every
+     * English DefinedTerm @id answered 301.
+     */
+    #[Test]
+    public function theBasePathIsTheGlossaryPageSlugInThePageLanguage(): void
+    {
+        $service = $this->service();
+
+        self::assertSame('/glossary', $service->resolveGlossaryBasePath($this->page(['_languageId' => 1])));
+        self::assertSame('/lexikon', $service->resolveGlossaryBasePath($this->page(['_languageId' => 0])), 'cached per language');
     }
 
     /**

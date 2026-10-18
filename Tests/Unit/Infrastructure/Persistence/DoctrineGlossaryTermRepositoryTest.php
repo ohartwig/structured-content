@@ -212,4 +212,17 @@ final class DoctrineGlossaryTermRepositoryTest extends TestCase
 
         self::assertNull($this->repository()->findPageSlug(42));
     }
+
+    /**
+     * In another language the translation's slug is the glossary path: the
+     * English glossary page lives at /glossary, not at the German /glossar.
+     */
+    #[Test]
+    public function inAnotherLanguageTheTranslatedSlugIsUsed(): void
+    {
+        $this->glossaryExtension(installed: true);
+        $this->rows = [['slug' => '/glossary']];
+
+        self::assertSame('/glossary', $this->repository()->findPageSlug(42, 1));
+    }
 }
