@@ -250,6 +250,20 @@ final class PodcastSeriesSchemaGeneratorTest extends TestCase
      * einzeln adressierbar.
      */
     /**
+     * The episode as PodcastFeedService writes it carries its date and length
+     * into the schema. The double used to say `datePublished` and "00:42:00",
+     * which the generator never reads, so no test ever saw either property.
+     */
+    #[Test]
+    public function aFeedEpisodeCarriesItsDateAndDurationIntoTheSchema(): void
+    {
+        $item = $this->generator()->buildEpisodeSchemas([$this->episode()], 'de', 'https://example.com/')[0];
+
+        self::assertSame('2026-07-01T09:00:00+02:00', $item['datePublished'] ?? null);
+        self::assertArrayHasKey('timeRequired', $item);
+    }
+
+    /**
      * A feed date becomes an ISO 8601 date in the full episode schema; a date
      * the parser cannot read is dropped rather than breaking the document.
      */

@@ -136,8 +136,10 @@ trait PodcastFeedDoubles
             'description' => 'Eine Folge ueber strukturierte Daten.',
             'guid' => 'https://example.com/feed/12',
             'link' => 'https://example.com/folge-12',
-            'datePublished' => '2026-07-01T09:00:00+02:00',
-            'duration' => '00:42:00',
+            // The shape PodcastFeedService writes: pubDate as the RSS item has
+            // it, duration as whole seconds.
+            'pubDate' => 'Wed, 01 Jul 2026 09:00:00 +0200',
+            'duration' => 2520,
             'enclosureUrl' => 'https://example.com/media/12.mp3',
             'enclosureType' => 'audio/mpeg',
             'imageUrl' => 'https://example.com/media/12.jpg',
