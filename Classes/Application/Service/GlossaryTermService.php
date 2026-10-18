@@ -38,7 +38,7 @@ final class GlossaryTermService
     /** @var array<int, list<array<string, mixed>>> */
     private array $allTermsCache = [];
 
-    /** @var array<int, string> Page-UID → resolved slug */
+    /** @var array<string, string> "<page uid>_<language id>" → resolved slug */
     private array $basePathCache = [];
 
     public function __construct(
@@ -73,12 +73,17 @@ final class GlossaryTermService
         if (0 === $detailPageUid) {
             return '/glossar';
         }
-        if (isset($this->basePathCache[$detailPageUid])) {
-            return $this->basePathCache[$detailPageUid];
+        // Per language: the English glossary page is /glossary, not /glossar.
+        // The default-language slug behind an /en base made every English
+        // DefinedTerm @id an address that answers 301.
+        $languageId = (int) ($pageData['_languageId'] ?? 0);
+        $cacheKey = $detailPageUid . '_' . $languageId;
+        if (isset($this->basePathCache[$cacheKey])) {
+            return $this->basePathCache[$cacheKey];
         }
 
-        $resolved = $this->repository->findPageSlug($detailPageUid) ?? '/glossar';
-        $this->basePathCache[$detailPageUid] = $resolved;
+        $resolved = $this->repository->findPageSlug($detailPageUid, $languageId) ?? '/glossar';
+        $this->basePathCache[$cacheKey] = $resolved;
 
         return $resolved;
     }

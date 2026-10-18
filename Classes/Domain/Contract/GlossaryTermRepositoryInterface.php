@@ -24,7 +24,11 @@ interface GlossaryTermRepositoryInterface
      */
     public function isAvailable(): bool;
 
-    public function findPageSlug(int $pageUid): ?string;
+    /**
+     * The slug of a page in the given language: the translation's own slug
+     * (`l10n_parent`), or the default language's when the page has none.
+     */
+    public function findPageSlug(int $pageUid, int $languageId = 0): ?string;
 
     /**
      * @return array<string, mixed>|null

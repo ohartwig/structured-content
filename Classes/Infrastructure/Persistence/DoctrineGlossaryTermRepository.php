@@ -34,10 +34,26 @@ final readonly class DoctrineGlossaryTermRepository implements GlossaryTermRepos
         return ExtensionManagementUtility::isLoaded('dpn_glossary');
     }
 
-    public function findPageSlug(int $pageUid): ?string
+    public function findPageSlug(int $pageUid, int $languageId = 0): ?string
     {
         if (!$this->isAvailable() || $pageUid <= 0) {
             return null;
+        }
+
+        if ($languageId > 0) {
+            $qb = $this->queryBuilderFor('pages');
+            $translated = $qb->select('slug')
+                ->from('pages')
+                ->where(
+                    $qb->expr()->eq('l10n_parent', $qb->createNamedParameter($pageUid, ParameterType::INTEGER)),
+                    $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter($languageId, ParameterType::INTEGER)),
+                )
+                ->setMaxResults(1)
+                ->executeQuery()
+                ->fetchOne();
+            if (is_string($translated) && '' !== $translated) {
+                return $translated;
+            }
         }
 
         $qb = $this->queryBuilderFor('pages');
