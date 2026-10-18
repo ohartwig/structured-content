@@ -9,18 +9,18 @@ Schema.org JSON-LD generation, AI-context annotations, and content-relationship 
 ## Features
 
 - **Schema.org Generator Stack** — Priority-ordered generators emit Article, WebPage, FAQ, Organization (Corporation + ProfessionalService), Service, Product, Person, ProfilePage, ItemList, DefinedTerm/DefinedTermSet, Review, BreadcrumbList, SoftwareApplication, PodcastSeries, PodcastEpisode JSON-LD
-- **Corporation / ProfessionalService Organization** (v2.1+) — Multi-Type Organization mit `contactPoint[]` (per-Site CSV `contactPointTypes`), strukturierter `areaServed` (Country/AdministrativeArea-Mapping), `knowsAbout`, `sameAs` (host-basiert ohne eigene Site gefiltert), `foundingDate`, `image`+`logo`. 7 neue Site-Settings: `addressLocality`, `addressCountry`, `email`, `foundingDate`, `sameAs`, `knowsAbout`, `contactPointTypes`.
-- **Per-Page Schema Felder** (v2.2+) — TCA-Felder `tx_structuredcontent_same_as` (Textarea, eine URL pro Zeile), `tx_structuredcontent_code_repository` (Input) und `tx_structuredcontent_about` (IRRE-Inline auf `tx_structuredcontent_about_entry`). Generator-Trait `PageLevelExtraSchemaTrait` reicht die Felder an WebPage/Article/Service. sameAs filtert die eigene Site host-basiert raus, about ersetzt die Default-`#organization`-Referenz wenn Subjects gepflegt sind.
-- **Standalone Person + Cross-Refs** (v2.3+) — `PersonPageSchemaGenerator` emittiert auf `/autor/<slug>` die volle Person-Entity mit stabiler `@id = <siteBase>/autor/<slug>#person`. Article/SoftwareApplication/PodcastEpisode-Generatoren referenzieren Authoren via `{@id}` statt inline duplizierte Person-Objekte. Inline-Fallback bleibt für slug-lose Authoren (externe Gast-Posts). `PersonSchemaBuilder` füllt `url`, `image` (FAL), `worksFor.@id`, `sameAs`, `knowsAbout`, `knowsLanguage`, `jobTitle`, `alumniOf`.
-- **ItemList für Hub-Pages** (v2.3+) — `ItemListSchemaGenerator` erkennt `moselwal_cards`/`smallcards`/`smallcardscarousel`/`teaser`-CTypes und emittiert pro Block eine `ItemList` mit `name` (Block-Header), `description` (Subheader), `itemListElement` (aus `moselwal_card`-Records mit `position`/`name`/`url`). Mehrere Blöcke auf einer Page → ItemLists in `@graph`.
-- **Glossar / DefinedTerm + DefinedTermSet** (v2.4+) — Conditional Integration mit `featdd/dpn-glossary` (nur aktiv wenn die Extension geladen ist, `GlossaryTermService::isAvailable()` als Guard). Auf der Listing-Page (`/glossar`) wird `DefinedTermSet` mit `@id = <siteBase>/glossar#termset` und `hasDefinedTerm[]`-Refs emittiert; auf Detail-Pages (`/glossar/<slug>`) ein `DefinedTerm` mit `@id = <siteBase>/glossar/<slug>#term`, `name`, `description` (aus `tx_dpnglossary_domain_model_description`, Fallback `meta_description`/`tooltiptext`), `alternateName` (aus `tx_dpnglossary_domain_model_synonym`), `inDefinedTermSet.@id`. Zusätzlich scannt die `JsonLdInjectorMiddleware` den FE-Response-Body nach dpn-glossary-Auto-Parser-Links (`<a class="dpnglossary link" href="#slug">`) und hängt die referenzierten Terms als `{@id: ...#term}`-Subjects an `about` an — additive zu manuellen `tx_structuredcontent_about_entry`-Einträgen.
-- **AI Context Inheritance** — Audience, tone, channel metadata kaskadiert durch den Page-Tree.
-- **Content Relationships** — Typed, directional relationships mit Confidence-Scoring.
-- **Category Mapping** — `sys_category` slug field + `articleSection` Property in Article JSON-LD + RTE-Description (für Kategorie-Hero-Blocks).
+- **Corporation / ProfessionalService Organization** (v2.1+) — multi-type Organization with `contactPoint[]` (per-site CSV `contactPointTypes`), structured `areaServed` (Country/AdministrativeArea mapping), `knowsAbout`, `sameAs` (the own site filtered out by host), `foundingDate`, `image` + `logo`. Seven new site settings: `addressLocality`, `addressCountry`, `email`, `foundingDate`, `sameAs`, `knowsAbout`, `contactPointTypes`.
+- **Per-page schema fields** (v2.2+) — TCA fields `tx_structuredcontent_same_as` (textarea, one URL per line), `tx_structuredcontent_code_repository` (input) and `tx_structuredcontent_about` (IRRE inline on `tx_structuredcontent_about_entry`). The generator trait `PageLevelExtraSchemaTrait` passes the fields to WebPage/Article/Service. sameAs filters out the own site by host; about replaces the default `#organization` reference when subjects are maintained.
+- **Standalone Person + cross-references** (v2.3+) — `PersonPageSchemaGenerator` emits the full Person entity on `/autor/<slug>` with a stable `@id = <siteBase>/autor/<slug>#person`. The Article, SoftwareApplication and PodcastEpisode generators reference authors via `{@id}` instead of duplicating Person objects inline. The inline fallback stays for authors without a slug (external guest posts). `PersonSchemaBuilder` fills `url`, `image` (FAL), `worksFor.@id`, `sameAs`, `knowsAbout`, `knowsLanguage`, `jobTitle`, `alumniOf`.
+- **ItemList for hub pages** (v2.3+) — `ItemListSchemaGenerator` recognises the `moselwal_cards`/`smallcards`/`smallcardscarousel`/`teaser` CTypes and emits one `ItemList` per block with `name` (block header), `description` (subheader) and `itemListElement` (from `moselwal_card` records with `position`/`name`/`url`). Several blocks on one page → several ItemLists in `@graph`.
+- **Glossary / DefinedTerm + DefinedTermSet** (v2.4+) — conditional integration with `featdd/dpn-glossary` (active only when that extension is loaded, guarded by `GlossaryTermService::isAvailable()`). The listing page (`/glossar`) emits a `DefinedTermSet` with `@id = <siteBase>/glossar#termset` and `hasDefinedTerm[]` references; detail pages (`/glossar/<slug>`) emit a `DefinedTerm` with `@id = <siteBase>/glossar/<slug>#term`, `name`, `description` (from `tx_dpnglossary_domain_model_description`, falling back to `meta_description`/`tooltiptext`), `alternateName` (from `tx_dpnglossary_domain_model_synonym`) and `inDefinedTermSet.@id`. In addition, `JsonLdInjectorMiddleware` scans the frontend response body for dpn-glossary auto-parser links (`<a class="dpnglossary link" href="#slug">`) and appends the referenced terms to `about` as `{@id: ...#term}` subjects — in addition to manual `tx_structuredcontent_about_entry` entries.
+- **AI Context Inheritance** — Audience, tone and channel metadata cascade through the page tree.
+- **Content Relationships** — Typed, directional relationships with confidence scoring.
+- **Category Mapping** — `sys_category` slug field + `articleSection` property in Article JSON-LD + RTE description (for category hero blocks).
 - **Channel-Aware Fields** — Restrict content fields per delivery channel (Website, AI Agent, Voice, Social).
-- **AI Content Disclosure** — Article-Schema enthält bei AI-getaggten Hero-Bildern `image: {creator: {SoftwareApplication, name}, creditText: "AI-generated"}` (EU AI Act Art. 50). Pflege via `koh/content-provenance`-TCA-Felder.
-- **Reading Time** — Article-Schema enthält `wordCount` + `timeRequired` (PT*M) — byte-identisch zur FE-Reading-Time-Badge (200 WPM).
-- **Language-Fallback in Schema-Generators** — Translation-aware: default-Sprache-Records werden geladen + EN-Translations overlay'd. Schema-Output funktioniert auch unter `fallbackType: fallback` ohne Lücken.
+- **AI Content Disclosure** — for AI-tagged hero images the Article schema contains `image: {creator: {SoftwareApplication, name}, creditText: "AI-generated"}` (EU AI Act Art. 50). Maintained through the TCA fields of `koh/content-provenance`.
+- **Reading Time** — the Article schema contains `wordCount` + `timeRequired` (PT*M) — byte-identical to the frontend reading-time badge (200 WPM).
+- **Language fallback in schema generators** — translation-aware: default-language records are loaded and their translations overlaid. Schema output also works under `fallbackType: fallback` without gaps.
 - **CLI Tools** — Validation, export, gap analysis.
 - **DDD 4-Layer Architecture** — Strict layer separation enforced by deptrac.
 
@@ -37,57 +37,57 @@ composer require koh/structured-content
 
 ## Schema.org Generators
 
-`Classes/Infrastructure/SchemaOrg/` — alle implementieren `SchemaGeneratorInterface`,
-werden via Service-Tag `structured_content.schema_generator` registriert und
-nach `priority` gerendert (höher = früher im JSON-LD-Block).
+`Classes/Infrastructure/SchemaOrg/` — all implement `SchemaGeneratorInterface`,
+are registered via the service tag `structured_content.schema_generator` and
+rendered by `priority` (higher = earlier in the JSON-LD block).
 
 | Generator | Priority | `@type` | Trigger |
 |---|---|---|---|
-| `BreadcrumbListSchemaGenerator` | 90 | `BreadcrumbList` | Jede Page mit Rootline |
-| `DefinedTermSchemaGenerator` | 85 | `DefinedTerm` | `/glossar/{slug}` — dpn-glossary-Detail-Page (conditional auf `isLoaded('dpn_glossary')`); Output enthält `alternateName` aus Synonymen |
-| `PersonPageSchemaGenerator` | 80 | `Person` (standalone) | `/autor/{slug}` — emittiert die volle Person-Entity mit `@id` für Cross-Page-Refs |
-| `DefinedTermSetSchemaGenerator` | 78 | `DefinedTermSet` | Glossar-Listing-Page (`uid == dpnGlossary.settings.detailPage`); `hasDefinedTerm[]` als `@id`-Refs |
-| `ProfilePageSchemaGenerator` | 75 | `ProfilePage` + `mainEntity.@id` + `hasPart` | `/autor/{slug}` — Wrapper-Page mit `@id`-Ref auf die Person (kein Inline) |
-| `ReviewSchemaGenerator` | 68 | `Review` | Pages mit Testimonials-CB |
-| `PodcastEpisodeSchemaGenerator` | 65 | `PodcastEpisode` | Podcast-Plugin Detail-View (mit `actor[]` als `@id`-Refs für Hosts + Guests) |
-| `PodcastSeriesSchemaGenerator` | 60 | `PodcastSeries` | Podcast-Plugin List-View |
-| `SoftwareApplicationSchemaGenerator` | 55 | `SoftwareApplication` | Pages mit `tx_structuredcontent_code_repository` gesetzt |
-| `ArticleSchemaGenerator` | 50 | `Article` / `BlogPosting` / … | Article-Pages — `author` als `@id`-Ref auf `/autor/<slug>#person` |
-| `FaqSchemaGenerator` | 45 | `FAQPage` | Pages mit FAQ-CB |
-| `HowToSchemaGenerator` | 45 | `HowTo` | Pages mit Steps-CB |
-| `WebPageSchemaGenerator` | 40 | `WebPage` | Fallback für alle Pages — liest Per-Page `same_as`/`code_repository`/`about` |
-| `ItemListSchemaGenerator` | 35 | `ItemList` | Pages mit Card-CB (`moselwal_cards`/`smallcards`/`smallcardscarousel`/`teaser`) und non-empty Header |
-| `WebSiteSchemaGenerator` | 30 | `WebSite` | Site-Root + Sub-Sites |
-| `OrganizationSchemaGenerator` | 25 | `Organization` / `[Corporation,ProfessionalService]` | Site-weit aus settings; `@type` per `organizationTypes`-Setting konfigurierbar (Multi-Type ersetzt das Default `Organization`) |
-| `ServiceSchemaGenerator` | 20 | `Service` | Pages mit Service-CB (skipped wenn SoftwareApplication owned) |
-| `ProfessionalServiceSchemaGenerator` | 20 | `ProfessionalService` | Service-Pages mit Provider-Org |
-| `PackagesGridEnterpriseServiceSchemaGenerator` | 18 | `Service`-Variants | Packages-Grid-CB |
-| `PackagesGridProductSchemaGenerator` | 18 | `Product` | Packages-Grid-CB |
-| `ProductSchemaGenerator` | 15 | `Product` | Pages mit Product-CB |
-| `PersonSchemaGenerator` | 10 | `Person` | Team-CB — listet mehrere Persons als ItemList |
-| `AutoDetectSchemaGenerator` | 5 | dynamic | TCA-driven Mapping |
+| `BreadcrumbListSchemaGenerator` | 90 | `BreadcrumbList` | Every page with a rootline |
+| `DefinedTermSchemaGenerator` | 85 | `DefinedTerm` | `/glossar/{slug}` — dpn-glossary detail page (conditional on `isLoaded('dpn_glossary')`); output contains `alternateName` from synonyms |
+| `PersonPageSchemaGenerator` | 80 | `Person` (standalone) | `/autor/{slug}` — emits the full Person entity with `@id` for cross-page references |
+| `DefinedTermSetSchemaGenerator` | 78 | `DefinedTermSet` | Glossary listing page (`uid == dpnGlossary.settings.detailPage`); `hasDefinedTerm[]` as `@id` references |
+| `ProfilePageSchemaGenerator` | 75 | `ProfilePage` + `mainEntity.@id` + `hasPart` | `/autor/{slug}` — wrapper page with an `@id` reference to the Person (not inline) |
+| `ReviewSchemaGenerator` | 68 | `Review` | Pages with the testimonials content block |
+| `PodcastEpisodeSchemaGenerator` | 65 | `PodcastEpisode` | Podcast plugin detail view (with `actor[]` as `@id` references for hosts and guests) |
+| `PodcastSeriesSchemaGenerator` | 60 | `PodcastSeries` | Podcast plugin list view |
+| `SoftwareApplicationSchemaGenerator` | 55 | `SoftwareApplication` | Pages with `tx_structuredcontent_code_repository` set |
+| `ArticleSchemaGenerator` | 50 | `Article` / `BlogPosting` / … | Article pages — `author` as an `@id` reference to `/autor/<slug>#person` |
+| `FaqSchemaGenerator` | 45 | `FAQPage` | Pages with the FAQ content block |
+| `HowToSchemaGenerator` | 45 | `HowTo` | Pages with the steps content block |
+| `WebPageSchemaGenerator` | 40 | `WebPage` | Fallback for all pages — reads the per-page `same_as`/`code_repository`/`about` |
+| `ItemListSchemaGenerator` | 35 | `ItemList` | Pages with a card content block (`moselwal_cards`/`smallcards`/`smallcardscarousel`/`teaser`) and a non-empty header |
+| `WebSiteSchemaGenerator` | 30 | `WebSite` | Site root + sub-sites |
+| `OrganizationSchemaGenerator` | 25 | `Organization` / `[Corporation,ProfessionalService]` | Site-wide from settings; `@type` configurable via the `organizationTypes` setting (multi-type replaces the default `Organization`) |
+| `ServiceSchemaGenerator` | 20 | `Service` | Pages with the service content block (skipped when SoftwareApplication owns the page) |
+| `ProfessionalServiceSchemaGenerator` | 20 | `ProfessionalService` | Service pages with a provider organization |
+| `PackagesGridEnterpriseServiceSchemaGenerator` | 18 | `Service` variants | Packages grid content block |
+| `PackagesGridProductSchemaGenerator` | 18 | `Product` | Packages grid content block |
+| `ProductSchemaGenerator` | 15 | `Product` | Pages with the product content block |
+| `PersonSchemaGenerator` | 10 | `Person` | Team content block — lists several persons as an ItemList |
+| `AutoDetectSchemaGenerator` | 5 | dynamic | TCA-driven mapping |
 
-### Builder + Traits
+### Builders + traits
 
-| Klasse | Zweck |
+| Class | Purpose |
 |---|---|
-| `Application/Service/PersonSchemaBuilder` | `buildFromRow()` — emittiert Person mit `@id = <siteBase>/autor/<slug>#person`, `url`, `image` (FAL), `worksFor[]`, `sameAs[]` (mit `Label\|URL`-Pipe-Format), `knowsAbout`, `knowsLanguage`. `buildPersonReference()` liefert minimal `{@type:Person, @id}` für Cross-Refs. `AUTHOR_PATH = '/autor'` Konstante als single-source-of-truth. |
-| `Application/Service/GlossaryTermService` (v2.4+) | Conditional-Integration mit `featdd/dpn-glossary`. `isAvailable()` ist der Guard (kein DB-Zugriff wenn die Extension nicht geladen ist). `findTermBySlug()`/`findAllTerms()`/`loadFirstDescription()`/`loadSynonyms()`/`resolveGlossaryBasePath()` (aus `dpnGlossary.settings.detailPage` → page-slug, Fallback `/glossar`)/`isGlossaryListingPage()`. Singleton mit per-Request-Cache. |
-| `Infrastructure/SchemaOrg/PageLevelExtraSchemaTrait` (v2.2+) | `applyPageLevelExtras($data, $pageData)` — fügt `codeRepository`, `sameAs`, `about` an WebPage/Article/Service. sameAs filtert eigene Site host-basiert raus, about merged manuelle `_aboutEntries` mit Glossar-Refs aus `_glossaryRefs` (v2.4+, additive). |
-| `Infrastructure/SchemaOrg/PersonRoutingArgumentTrait` | Resolved `person`-Slug aus `_routingArguments` der Person-Plugin-Detail-View. Nutzt PersonPage + ProfilePage. |
-| `Infrastructure/SchemaOrg/PodcastFeedCacheReaderTrait` | Liest gecachte Feed-Items für Podcast-Schemata ohne Re-Fetch. Cache-Key `rssfeed_<sha256(feedUrl)>` (synchron mit `PodcastFeedService::cacheIdentifierFor()` — vorher md5, gefixt in v2.0.3). |
-| `Infrastructure/SchemaOrg/SanitizesSchemaTrait` | Strip-Filter für leere/nicht-JSON-konforme Werte |
-| `Infrastructure/SchemaOrg/ContextAndRelationshipsTrait` | Hängt AI-Context + Relationships an Schema-Output |
+| `Application/Service/PersonSchemaBuilder` | `buildFromRow()` — emits a Person with `@id = <siteBase>/autor/<slug>#person`, `url`, `image` (FAL), `worksFor[]`, `sameAs[]` (in the `Label\|URL` pipe format), `knowsAbout`, `knowsLanguage`. `buildPersonReference()` returns a minimal `{@type:Person, @id}` for cross-references. The constant `AUTHOR_PATH = '/autor'` is the single source of truth. |
+| `Application/Service/GlossaryTermService` (v2.4+) | Conditional integration with `featdd/dpn-glossary`. `isAvailable()` is the guard (no database access when the extension is not loaded). `findTermBySlug()`/`findAllTerms()`/`loadFirstDescription()`/`loadSynonyms()`/`resolveGlossaryBasePath()` (from `dpnGlossary.settings.detailPage` → page slug, fallback `/glossar`)/`isGlossaryListingPage()`. Singleton with a per-request cache. |
+| `Infrastructure/SchemaOrg/PageLevelExtraSchemaTrait` (v2.2+) | `applyPageLevelExtras($data, $pageData)` — adds `codeRepository`, `sameAs`, `about` to WebPage/Article/Service. sameAs filters out the own site by host; about merges manual `_aboutEntries` with glossary references from `_glossaryRefs` (v2.4+, additive). |
+| `Infrastructure/SchemaOrg/PersonRoutingArgumentTrait` | Resolves the `person` slug from the `_routingArguments` of the person plugin detail view. Used by PersonPage + ProfilePage. |
+| `Infrastructure/SchemaOrg/PodcastFeedCacheReaderTrait` | Reads cached feed items for podcast schemas without a re-fetch. Cache key `rssfeed_<sha256(feedUrl)>` (in sync with `PodcastFeedService::cacheIdentifierFor()` — previously md5, fixed in v2.0.3). |
+| `Infrastructure/SchemaOrg/SanitizesSchemaTrait` | Strip filter for empty or non-JSON-conformant values |
+| `Infrastructure/SchemaOrg/ContextAndRelationshipsTrait` | Appends AI context + relationships to the schema output |
 
 ## Repositories
 
 `Classes/Domain/Repository/`:
 
-| Repository | Zweck |
+| Repository | Purpose |
 |---|---|
-| `AuthoredPagesRepository` | `findByPersonUid` — Pages, die `tx_structuredcontent_author_records` mit der Person verknüpfen (für `Person.hasPart`) |
-| `CategoryRepository` | `findByPageUid` — `sys_category`-Records via `sys_category_record_mm` (für `Article.articleSection`) |
-| `EpisodeGuestsRepository` | Bulk `episode_slug → Person[]` für `PodcastEpisode.actor` |
+| `AuthoredPagesRepository` | `findByPersonUid` — pages that link the person via `tx_structuredcontent_author_records` (for `Person.hasPart`) |
+| `CategoryRepository` | `findByPageUid` — `sys_category` records via `sys_category_record_mm` (for `Article.articleSection`) |
+| `EpisodeGuestsRepository` | Bulk `episode_slug → Person[]` for `PodcastEpisode.actor` |
 
 ## Architecture
 
@@ -99,18 +99,18 @@ Classes/
 └── Presentation/    # Backend module controllers
 ```
 
-DDD-Layer-Regeln werden via deptrac in CI enforced.
+DDD layer rules are enforced by deptrac in CI.
 
 ### Database Tables
 
 | Table | Purpose |
 |-------|---------|
 | `tx_structuredcontent_relation` | Typed content relationships (replaces, belongs_to, related_to, explains) |
-| `tx_structuredcontent_about_entry` (v2.2+) | IRRE-Records für per-Page `about`-Subjects: `schema_type` (Thing/SoftwareApplication/Person/Place/…), `name`, `same_as` (URL) |
-| `tx_dpnglossary_domain_model_term` (v2.4+, optional) | Aus `featdd/dpn-glossary` — wird vom GlossaryTermService gelesen wenn die Extension installiert ist. Felder: `name`, `url_segment` (Slug), `tooltiptext`, `meta_description`, `seo_title`, plus IRRE auf `…_description` (Schema.org `description`) und `…_synonym` (Schema.org `alternateName`). |
-| `pages` (extended) | `ai_context_*` + Schema-Felder: `tx_structuredcontent_schema_type`, `tx_structuredcontent_service_type/category`, `tx_structuredcontent_code_repository`, `tx_structuredcontent_programming_language/software_version/software_license/operating_system`, `tx_structuredcontent_author_records` (group → moselwal_person, max 10), `tx_structuredcontent_same_as` (Textarea, eine URL/Zeile), `tx_structuredcontent_about` (IRRE → about_entry) |
+| `tx_structuredcontent_about_entry` (v2.2+) | IRRE records for per-page `about` subjects: `schema_type` (Thing/SoftwareApplication/Person/Place/…), `name`, `same_as` (URL) |
+| `tx_dpnglossary_domain_model_term` (v2.4+, optional) | From `featdd/dpn-glossary` — read by GlossaryTermService when the extension is installed. Fields: `name`, `url_segment` (Slug), `tooltiptext`, `meta_description`, `seo_title`, plus IRRE on `…_description` (Schema.org `description`) and `…_synonym` (Schema.org `alternateName`). |
+| `pages` (extended) | `ai_context_*` + schema fields: `tx_structuredcontent_schema_type`, `tx_structuredcontent_service_type/category`, `tx_structuredcontent_code_repository`, `tx_structuredcontent_programming_language/software_version/software_license/operating_system`, `tx_structuredcontent_author_records` (group → moselwal_person, max 10), `tx_structuredcontent_same_as` (textarea, one URL per line), `tx_structuredcontent_about` (IRRE → about_entry) |
 | `tt_content` (extended) | `ai_context_*` element-level metadata |
-| `sys_category` (extended) | `slug` field (auto from title) für Filter-URLs + `articleSection`-Mapping |
+| `sys_category` (extended) | `slug` field (auto from title) for filter URLs + `articleSection` mapping |
 
 ### Relationship Type Mappings (Schema.org)
 
@@ -121,55 +121,55 @@ DDD-Layer-Regeln werden via deptrac in CI enforced.
 
 ### Cross-Page `@id` References
 
-Stabile `@id`s erlauben Crawlern Entity-Resolution über Page-Grenzen hinweg. Konventionen pro Domain:
+Stable `@id`s let crawlers resolve entities across page boundaries. Conventions per entity:
 
-| Entity | `@id` | Quelle |
+| Entity | `@id` | Source |
 |---|---|---|
-| Organization | `<siteBase>#organization` | OrganizationSchemaGenerator (Site-weit, jede Page) |
-| WebSite | `<siteBase>#website` | WebSiteSchemaGenerator (Site-Root + Sub-Pages via `isPartOf`) |
-| Person | `<siteBase>/autor/<slug>#person` | PersonPageSchemaGenerator (Author-Detail-Page) — Article/Podcast referenzieren via `author.@id` / `actor.@id` |
-| DefinedTermSet | `<siteBase>/glossar#termset` | DefinedTermSetSchemaGenerator (Glossar-Listing-Page) — DefinedTerm referenziert via `inDefinedTermSet.@id` |
-| DefinedTerm | `<siteBase>/glossar/<slug>#term` | DefinedTermSchemaGenerator (Glossar-Detail-Page) — WebPage/Article/Service referenzieren via `about[].@id` wenn der dpn-glossary-Auto-Parser den Term auf der Page verlinkt hat |
-| WebPage | `<siteBase><slug>` | WebPageSchemaGenerator (kanonische Page-URL als `@id`) |
+| Organization | `<siteBase>#organization` | OrganizationSchemaGenerator (site-wide, every page) |
+| WebSite | `<siteBase>#website` | WebSiteSchemaGenerator (site root + sub-pages via `isPartOf`) |
+| Person | `<siteBase>/autor/<slug>#person` | PersonPageSchemaGenerator (author detail page) — Article/Podcast reference it via `author.@id` / `actor.@id` |
+| DefinedTermSet | `<siteBase>/glossar#termset` | DefinedTermSetSchemaGenerator (glossary listing page) — DefinedTerm references it via `inDefinedTermSet.@id` |
+| DefinedTerm | `<siteBase>/glossar/<slug>#term` | DefinedTermSchemaGenerator (glossary detail page) — WebPage/Article/Service reference it via `about[].@id` when the dpn-glossary auto-parser linked the term on the page |
+| WebPage | `<siteBase><slug>` | WebPageSchemaGenerator (canonical page URL as `@id`) |
 
-`Article.publisher`, `Service.provider`, `WebPage.about`, `PodcastEpisode.publisher` etc. setzen `{@id: <siteBase>#organization}` — die Organization wird einmal pro Page als volle Entity emittiert (jede Page enthält den Organization-Knoten, ~500 Bytes Bloat akzeptiert für Cross-Ref-Stabilität).
+`Article.publisher`, `Service.provider`, `WebPage.about`, `PodcastEpisode.publisher` etc. set `{@id: <siteBase>#organization}` — the Organization is emitted once per page as a full entity (every page contains the Organization node; ~500 bytes of bloat accepted for stable cross-references).
 
 ### Site Settings (Schema.org)
 
-Erweitern Pro-Site das `structuredContent.schema.*`-Namespace. Konsumiert vom OrganizationSchemaGenerator + PageLevelExtraSchemaTrait:
+Extend the `structuredContent.schema.*` namespace per site. Consumed by OrganizationSchemaGenerator + PageLevelExtraSchemaTrait:
 
 | Setting | Default | Purpose |
 |---|---|---|
-| `legalName` | `''` | Organization.legalName (z.B. "Moselwal Digitalagentur GmbH") |
-| `organizationDescription` | `''` | Stable Org-Description (NICHT die Article-Description) |
-| `organizationTypes` | `''` | CSV — ersetzt `@type: Organization` mit Multi-Type (z.B. `'Corporation, ProfessionalService'`) |
-| `email` (v2.1+) | `''` | Org-Email (Fallback `footerEmail`) |
-| `phone` | `''` | Org-Telefon im E.164-Format |
-| `foundingDate` (v2.1+) | `''` | Gründungsjahr (YYYY) oder ISO-Datum (Fallback `footerFoundingDate`) |
+| `legalName` | `''` | Organization.legalName (e.g. "Moselwal Digitalagentur GmbH") |
+| `organizationDescription` | `''` | Stable organization description (NOT the article description) |
+| `organizationTypes` | `''` | CSV — replaces `@type: Organization` with a multi-type (e.g. `'Corporation, ProfessionalService'`) |
+| `email` (v2.1+) | `''` | Organization email (fallback `footerEmail`) |
+| `phone` | `''` | Organization phone in E.164 format |
+| `foundingDate` (v2.1+) | `''` | Founding year (YYYY) or ISO date (fallback `footerFoundingDate`) |
 | `streetAddress` | `''` | PostalAddress.streetAddress |
 | `postalCode` | `''` | PostalAddress.postalCode |
-| `addressLocality` (v2.1+) | `''` | City/Locality (Fallback `footerLocation` vor erstem Komma) |
-| `addressRegion` | `''` | State/Region (z.B. NRW) |
-| `addressCountry` (v2.1+) | `'DE'` | ISO-3166-1 alpha-2 Country Code |
-| `vatID` | `''` | USt-Identnummer |
-| `areaServed` | `''` | CSV ISO-Codes — werden zu Country/AdministrativeArea-Objekten expandiert (EU als AdministrativeArea) |
-| `openingHours` | `''` | Schema.org-Format (z.B. `'Mo-Fr 09:00-18:00'`) |
-| `contactPointTypes` (v2.1+) | `'sales, technical support'` | CSV — ein ContactPoint pro Eintrag, alle teilen email/phone/areaServed |
-| `knowsAbout` (v2.1+) | `''` | CSV Wissens-Topics |
-| `sameAs` (v2.1+) | `''` | CSV zusätzlicher sameAs-URLs (Reddit, x.com, Bsky). Eigene Site wird host-basiert gefiltert |
+| `addressLocality` (v2.1+) | `''` | City/locality (fallback: `footerLocation` before the first comma) |
+| `addressRegion` | `''` | State/region (e.g. NRW) |
+| `addressCountry` (v2.1+) | `'DE'` | ISO 3166-1 alpha-2 country code |
+| `vatID` | `''` | VAT ID |
+| `areaServed` | `''` | CSV of ISO codes — expanded to Country/AdministrativeArea objects (EU as AdministrativeArea) |
+| `openingHours` | `''` | Schema.org format (e.g. `'Mo-Fr 09:00-18:00'`) |
+| `contactPointTypes` (v2.1+) | `'sales, technical support'` | CSV — one ContactPoint per entry, all sharing email/phone/areaServed |
+| `knowsAbout` (v2.1+) | `''` | CSV of knowledge topics |
+| `sameAs` (v2.1+) | `''` | CSV of additional sameAs URLs (Reddit, x.com, Bluesky). The own site is filtered out by host |
 | `serviceTypes` | `''` | CSV → `hasOfferCatalog.itemListElement[Offer.itemOffered.Service]` |
-| `priceRange` | `''` | Preis-Indikator (`€€€`) für ProfessionalService |
-| `searchActionUrl` | `''` | URL-Pattern für WebSite SearchAction (leer = disabled) |
-| `imageLicenseUrl/AcquireLicensePage/CopyrightNotice` | `''` | Hero-Image-Lizenz-Markup (Google Image-Metadata) |
+| `priceRange` | `''` | Price indicator (`€€€`) for ProfessionalService |
+| `searchActionUrl` | `''` | URL pattern for the WebSite SearchAction (empty = disabled) |
+| `imageLicenseUrl/AcquireLicensePage/CopyrightNotice` | `''` | Hero image licence markup (Google image metadata) |
 
-Footer-Settings (`footerLinkedIn/footerGitHub/footerInstagram/footerTwitter/footerFacebook/footerBluesky`) werden zusätzlich in `sameAs` eingesammelt und mit dem schema.sameAs-CSV dedupliziert. `footerWebsite` wird **NIE** in sameAs aufgenommen (eigene Site gehört zu `url`).
+Footer-Settings (`footerLinkedIn/footerGitHub/footerInstagram/footerTwitter/footerFacebook/footerBluesky`) are also collected into `sameAs` and deduplicated against the schema.sameAs CSV. `footerWebsite` is **NEVER** added to sameAs (the own site belongs in `url`).
 
 ### CLI Commands
 
 ```bash
-vendor/bin/typo3 structured-content:missing-context     # Pages ohne AI-Context
-vendor/bin/typo3 structured-content:export-relations    # Export als JSON/CSV
-vendor/bin/typo3 structured-content:validate-channels   # Validate Channel-Configs
+vendor/bin/typo3 structured-content:missing-context     # Pages without AI context
+vendor/bin/typo3 structured-content:export-relations    # Export as JSON/CSV
+vendor/bin/typo3 structured-content:validate-channels   # Validate channel configs
 ```
 
 ## Development
@@ -178,7 +178,7 @@ vendor/bin/typo3 structured-content:validate-channels   # Validate Channel-Confi
 composer install
 composer test                    # Unit + Functional tests
 composer phpstan                 # Static analysis (level 8)
-composer deptrac                 # DDD-Layer enforcement
+composer deptrac                 # DDD layer enforcement
 vendor/bin/php-cs-fixer fix      # Code style (PER-CS3x0)
 ```
 
@@ -199,7 +199,7 @@ vendor/bin/php-cs-fixer fix      # Code style (PER-CS3x0)
 |---------|------|---------|
 | `koh/content-provenance` | Optional | Content integrity verification |
 | `koh/business-agent` | Optional | AI agent content access |
-| `featdd/dpn-glossary` (v2.4+) | Optional | Conditional auf `isLoaded('dpn_glossary')` — aktiviert DefinedTerm/DefinedTermSet-Generators + Auto-Parser-Link-Scan im JsonLdInjectorMiddleware (Pages die einen Glossar-Term verlinken bekommen die Term-`@id` als `about`-Subject) |
+| `featdd/dpn-glossary` (v2.4+) | Optional | Conditional on `isLoaded('dpn_glossary')` — enables the DefinedTerm/DefinedTermSet generators + the auto-parser link scan in JsonLdInjectorMiddleware (pages that link a glossary term get the term's `@id` as an `about` subject) |
 | `koh/dev` | Dev | Shared QA tooling |
 
 ## License
