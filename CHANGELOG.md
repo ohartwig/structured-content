@@ -3,6 +3,16 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.5](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.4...v2.14.5) (2026-10-18)
+
+### :bug: Fixes
+
+* **glossary:** resolve the glossary path in the page's language ([346069c](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/346069c8ca14b6c10534de4927dc3c2f292ece5f))
+
+### :white_check_mark: Tests
+
+* **podcast:** give the episode double the shape the feed writes ([6d11bea](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/6d11bea967af0e4df1af8063e5249777f741ac6c))
+
 ## [2.14.4](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.3...v2.14.4) (2026-10-18)
 
 ### :bug: Fixes
