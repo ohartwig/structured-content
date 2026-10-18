@@ -26,7 +26,7 @@ final class GlossaryLinkExtractorTest extends TestCase
      */
     private function extract(string $html): array
     {
-        return new GlossaryLinkExtractor()->extractSlugs($html, self::PATHS, self::HOSTS);
+        return (new GlossaryLinkExtractor())->extractSlugs($html, self::PATHS, self::HOSTS);
     }
 
     /**

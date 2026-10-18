@@ -121,7 +121,7 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
         $pubDate = (string) ($episode['pubDate'] ?? '');
         if ('' !== $pubDate) {
             try {
-                $data['datePublished'] = new \DateTimeImmutable($pubDate)->format('c');
+                $data['datePublished'] = (new \DateTimeImmutable($pubDate))->format('c');
             } catch (\Exception) {
                 // skip
             }
