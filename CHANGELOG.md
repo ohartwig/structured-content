@@ -3,6 +3,17 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.4](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.3...v2.14.4) (2026-10-18)
+
+### :bug: Fixes
+
+* admit PHP 8.3 and test the floor on it ([c91264f](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/c91264fac7ac064b7673c910a15445d9d5804518))
+* **docs:** write the README in English throughout ([7a46708](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/7a46708bf4cb5105dd4613aad8b32711d1755794))
+
+### :white_check_mark: Tests
+
+* cover the dates the floor change touched ([b8d60a1](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/b8d60a14e933966a98411ebd0e35f9b60491d622))
+
 ## [2.14.3](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.2...v2.14.3) (2026-10-16)
 
 ### :repeat: Chores
