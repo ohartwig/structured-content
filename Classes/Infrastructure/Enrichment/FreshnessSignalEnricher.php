@@ -18,11 +18,11 @@ final class FreshnessSignalEnricher implements FreshnessEnricherInterface
         $dateModified = null;
 
         if (isset($pageData['crdate']) && 0 !== (int) $pageData['crdate']) {
-            $datePublished = new \DateTimeImmutable()->setTimestamp((int) $pageData['crdate']);
+            $datePublished = (new \DateTimeImmutable())->setTimestamp((int) $pageData['crdate']);
         }
 
         if (isset($pageData['tstamp']) && 0 !== (int) $pageData['tstamp']) {
-            $dateModified = new \DateTimeImmutable()->setTimestamp((int) $pageData['tstamp']);
+            $dateModified = (new \DateTimeImmutable())->setTimestamp((int) $pageData['tstamp']);
         }
 
         $frequency = $this->calculateFrequency($pageData);

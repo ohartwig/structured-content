@@ -82,7 +82,7 @@ final class MarkdownContentNegotiationMiddlewareTest extends TestCase
         $pageInformation->setId((int) $this->page['uid']);
         $pageInformation->setPageRecord($this->page);
 
-        return new ServerRequest('https://example.com/', 'GET')
+        return (new ServerRequest('https://example.com/', 'GET'))
             ->withHeader('Accept', $accept)
             ->withAttribute('site', $site)
             ->withAttribute('frontend.page.information', $pageInformation)

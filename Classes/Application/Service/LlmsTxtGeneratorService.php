@@ -660,7 +660,7 @@ final readonly class LlmsTxtGeneratorService
         $lines[] = '> ' . ($languageId === 0
             ? 'Automatisch generierter Markdown-Dump aller öffentlichen Seiten zum Zeitpunkt: '
             : 'Auto-generated Markdown dump of all public pages, snapshot at: ')
-            . new \DateTimeImmutable()->format('c');
+            . (new \DateTimeImmutable())->format('c');
         $lines[] = '';
 
         $pages = $this->pageTree->loadVisiblePages($context->rootPageId, $languageId, $maxPages);

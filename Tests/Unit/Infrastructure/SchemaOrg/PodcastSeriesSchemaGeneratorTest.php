@@ -249,6 +249,22 @@ final class PodcastSeriesSchemaGeneratorTest extends TestCase
      * ist — sonst laufen alle Verweise auf die Uebersicht und keine Folge ist
      * einzeln adressierbar.
      */
+    /**
+     * A feed date becomes an ISO 8601 date in the full episode schema; a date
+     * the parser cannot read is dropped rather than breaking the document.
+     */
+    #[Test]
+    public function anEpisodeCarriesItsPublicationDateAndSkipsAnUnreadableOne(): void
+    {
+        $items = $this->generator()->buildEpisodeSchemas([
+            $this->episode(['pubDate' => 'Wed, 01 Jul 2026 09:00:00 +0200']),
+            $this->episode(['episode' => '13', 'pubDate' => 'not a date']),
+        ], 'de', 'https://example.com/');
+
+        self::assertSame('2026-07-01T09:00:00+02:00', $items[0]['datePublished']);
+        self::assertArrayNotHasKey('datePublished', $items[1]);
+    }
+
     #[Test]
     public function theEpisodeLinksPointAtTheDetailPageWhenThereIsOne(): void
     {
