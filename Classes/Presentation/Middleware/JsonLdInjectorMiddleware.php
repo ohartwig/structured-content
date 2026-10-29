@@ -16,6 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Http\HtmlResponse;
@@ -40,6 +41,7 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         private readonly ConnectionPool $connectionPool,
         private readonly SchemaMappingConfigurableInterface $contentBlockSchemaMapper,
         private readonly GlossaryTermService $glossaryService,
+        private readonly Context $context,
         private readonly GlossaryLinkExtractor $glossaryLinkExtractor = new GlossaryLinkExtractor(),
     ) {}
 
@@ -77,7 +79,12 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         $routeArguments = $pageArguments->getRouteArguments();
         $routeHash = [] !== $routeArguments ? '_' . md5(json_encode($routeArguments, JSON_THROW_ON_ERROR)) : '';
         $cacheIdentifier = 'jsonld_' . $siteIdentifier . '_' . $languageId . '_' . $pageUid . $routeHash;
-        $cachedJsonLd = $this->cache->get($cacheIdentifier);
+        // The identifier carries no workspace, visibility or user groups, so
+        // the cache may only serve and store what an anonymous visitor of the
+        // live site sees. Anything else is built for this request alone
+        // (AUD-061-F01).
+        $cacheable = $this->isPlainPublicRequest();
+        $cachedJsonLd = $cacheable ? $this->cache->get($cacheIdentifier) : false;
 
         if (false !== $cachedJsonLd && is_string($cachedJsonLd)) {
             return $this->injectJsonLd($response, $cachedJsonLd, $request);
@@ -192,9 +199,50 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         // Tagged with the page: TYPO3 flushes the "pages" cache group by
         // pageId_<uid> whenever a record on the page is saved or published,
         // and the DataHandler hook flushes the same tag for schema records.
-        $this->cache->set($cacheIdentifier, $jsonLdOutput, ['pageId_' . $pageUid]);
+        if ($cacheable) {
+            $this->cache->set($cacheIdentifier, $jsonLdOutput, ['pageId_' . $pageUid]);
+        }
 
         return $this->injectJsonLd($response, $jsonLdOutput, $request);
+    }
+
+    /**
+     * Whether this request sees exactly what an anonymous visitor of the live
+     * site sees: the live workspace, no preview, no hidden, scheduled or
+     * deleted records, and no frontend user or groups beyond the anonymous
+     * ones (0, -1). The content-element queries use FrontendRestrictionContainer,
+     * which reads all of these from the same Context; TYPO3's own page cache
+     * is likewise switched off for a preview.
+     */
+    private function isPlainPublicRequest(): bool
+    {
+        if (0 !== (int) $this->context->getPropertyFromAspect('workspace', 'id', 0)) {
+            return false;
+        }
+
+        // The preview aspect is set by the frontend rendering chain; without it
+        // there is no preview.
+        if ($this->context->hasAspect('frontend.preview')
+            && true === $this->context->getPropertyFromAspect('frontend.preview', 'isPreview', false)) {
+            return false;
+        }
+
+        foreach (['includeHiddenPages', 'includeHiddenContent', 'includeScheduledRecords', 'includeDeletedRecords'] as $property) {
+            if (true === $this->context->getPropertyFromAspect('visibility', $property, false)) {
+                return false;
+            }
+        }
+
+        if (true === $this->context->getPropertyFromAspect('frontend.user', 'isLoggedIn', false)) {
+            return false;
+        }
+
+        $groupIds = $this->context->getPropertyFromAspect('frontend.user', 'groupIds', [0, -1]);
+        if (!is_array($groupIds)) {
+            return false;
+        }
+
+        return [] === array_diff(array_map(intval(...), $groupIds), [0, -1]);
     }
 
     /**

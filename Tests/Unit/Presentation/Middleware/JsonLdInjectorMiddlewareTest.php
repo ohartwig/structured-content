@@ -21,6 +21,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Context\AspectInterface;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\UserAspect;
+use TYPO3\CMS\Core\Context\VisibilityAspect;
+use TYPO3\CMS\Core\Context\WorkspaceAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
@@ -31,6 +36,8 @@ use TYPO3\CMS\Core\Routing\PageArguments;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Aspect\PreviewAspect;
+use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use TYPO3\CMS\Frontend\Page\PageInformation;
 
 /**
@@ -70,14 +77,18 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
     /** @var list<string>|null term slugs the glossary knows; null: extension not installed */
     private ?array $glossaryTerms = null;
 
+    private Context $context;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->context = new Context();
+
         // Die Middleware baut Restriction-Container ueber `new`, und deren
         // Konstruktor zieht die TCA-Schema-Fabrik. Sie ist hier vorab
         // gedoubelt — die Warteschlange gibt jeweils eine heraus.
-        for ($i = 0; $i < 64; ++$i) {
+        for ($i = 0; $i < 256; ++$i) {
             GeneralUtility::addInstance(
                 TcaSchemaFactory::class,
                 $this->createStub(TcaSchemaFactory::class),
@@ -134,6 +145,7 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
             // meldet er sich als nicht verfuegbar, und das ist der Normalfall
             // hier; die Glossar-Tests setzen $glossaryTerms.
             new GlossaryTermService($this->glossaryRepository()),
+            $this->context,
         );
     }
 
@@ -477,5 +489,107 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
         );
 
         self::assertSame(['cve'], $this->generatedFrom['_glossaryRefs'] ?? null);
+    }
+
+    /**
+     * Contexts in which the page shows more than an anonymous visitor of the
+     * live site may see. The cache key carries none of them.
+     *
+     * @return array<string, array{string, AspectInterface}>
+     */
+    private function nonPublicContexts(): array
+    {
+        $loggedInUser = $this->createStub(FrontendUserAuthentication::class);
+        $loggedInUser->user = ['uid' => 5];
+
+        return [
+            'a workspace preview' => ['workspace', new WorkspaceAspect(3)],
+            'hidden content shown' => ['visibility', new VisibilityAspect(includeHiddenContent: true)],
+            'hidden pages shown' => ['visibility', new VisibilityAspect(includeHiddenPages: true)],
+            'scheduled records shown' => ['visibility', new VisibilityAspect(includeScheduledRecords: true)],
+            'deleted records shown' => ['visibility', new VisibilityAspect(includeDeletedRecords: true)],
+            'a frontend preview' => ['frontend.preview', new PreviewAspect(true)],
+            'a logged-in frontend user' => ['frontend.user', new UserAspect($loggedInUser)],
+            'frontend groups without a login' => ['frontend.user', new UserAspect(null, [0, -2, 7])],
+        ];
+    }
+
+    /**
+     * AUD-061-F01: outside the plain public context the cache is neither read
+     * nor written. A stored entry is not served (the request may see more
+     * than it holds), and what the request builds is not stored (it may hold
+     * what the public must not see).
+     */
+    #[Test]
+    public function aNonPublicContextNeitherReadsNorWritesTheCache(): void
+    {
+        foreach ($this->nonPublicContexts() as $why => [$aspectName, $aspect]) {
+            $this->context = new Context();
+            $this->context->setAspect($aspectName, $aspect);
+            $this->cacheEntries = ['jsonld_example_0_42' => '<script type="application/ld+json">{"name":"Stored for the public"}</script>'];
+            $this->cacheTags = [];
+            $this->documents = [new JsonLdDocument('WebPage', ['name' => 'Workspace draft'])];
+
+            $body = (string) $this->middleware()->process($this->request(), $this->handler())->getBody();
+
+            self::assertStringNotContainsString('Stored for the public', $body, $why . ': the cache was read');
+            self::assertStringContainsString('Workspace draft', $body, $why . ': the page still gets its own JSON-LD');
+            self::assertSame(
+                ['jsonld_example_0_42' => '<script type="application/ld+json">{"name":"Stored for the public"}</script>'],
+                $this->cacheEntries,
+                $why . ': the cache was written',
+            );
+            self::assertSame([], $this->cacheTags, $why . ': the cache was written');
+        }
+    }
+
+    /**
+     * The reproduction from AUD-061-F01: a preview renders the page first,
+     * then an anonymous visitor asks for it. The visitor gets the live
+     * JSON-LD, not the preview's.
+     */
+    #[Test]
+    public function aPreviewDoesNotLeakIntoTheNextAnonymousRequest(): void
+    {
+        foreach ($this->nonPublicContexts() as $why => [$aspectName, $aspect]) {
+            $this->cacheEntries = [];
+            $this->context = new Context();
+            $this->context->setAspect($aspectName, $aspect);
+            $this->documents = [new JsonLdDocument('FAQPage', ['name' => 'Unpublished question'])];
+            $this->middleware()->process($this->request(), $this->handler());
+
+            $this->context = new Context();
+            $this->documents = [new JsonLdDocument('WebPage', ['name' => 'Live page'])];
+            $body = (string) $this->middleware()->process($this->request(), $this->handler())->getBody();
+
+            self::assertStringNotContainsString('Unpublished question', $body, $why);
+            self::assertStringContainsString('Live page', $body, $why);
+        }
+    }
+
+    /**
+     * The plain public context still caches: the live workspace, default
+     * visibility, no preview, and an anonymous frontend user with the groups
+     * TYPO3 gives one (0, -1).
+     */
+    #[Test]
+    public function thePlainPublicContextStillCaches(): void
+    {
+        $anonymous = $this->createStub(FrontendUserAuthentication::class);
+        $this->context->setAspect('workspace', new WorkspaceAspect(0));
+        $this->context->setAspect('visibility', VisibilityAspect::create());
+        $this->context->setAspect('frontend.preview', new PreviewAspect(false));
+        $this->context->setAspect('frontend.user', new UserAspect($anonymous));
+        $this->documents = [new JsonLdDocument('WebPage', ['name' => 'About us'])];
+        $middleware = $this->middleware();
+
+        $middleware->process($this->request(), $this->handler());
+
+        self::assertSame(['jsonld_example_0_42'], array_keys($this->cacheEntries));
+
+        $this->documents = [new JsonLdDocument('WebPage', ['name' => 'Something else entirely'])];
+        $body = (string) $middleware->process($this->request(), $this->handler())->getBody();
+
+        self::assertStringContainsString('About us', $body, 'the second request is served from the cache');
     }
 }
