@@ -101,6 +101,10 @@ Classes/
 
 DDD layer rules are enforced by deptrac in CI.
 
+### JSON-LD Cache
+
+`JsonLdInjectorMiddleware` keeps the generated JSON-LD in the `structured_content_schema` cache, keyed on site, language, page and route arguments and tagged `pageId_<uid>`. The cache is only read and written for plain public requests: live workspace, no frontend preview, no hidden, scheduled or deleted records shown, and no logged-in frontend user or frontend groups beyond the anonymous ones. Workspace and hidden-content previews and logged-in frontend users get JSON-LD built for their request alone, so it never reaches the shared entry.
+
 ### Database Tables
 
 | Table | Purpose |
