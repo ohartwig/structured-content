@@ -3,6 +3,16 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.6](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.5...v2.14.6) (2026-10-29)
+
+### :bug: Fixes
+
+* **cache:** cache JSON-LD only for plain public requests ([53c45fb](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/53c45fb5908158009b33c04d689ed87e64c3289a))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([4094f9e](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/4094f9e20bded3f921a19fc9d0b3c22087fbd427))
+
 ## [2.14.5](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.4...v2.14.5) (2026-10-18)
 
 ### :bug: Fixes
