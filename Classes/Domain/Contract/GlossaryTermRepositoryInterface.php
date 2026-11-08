@@ -36,6 +36,17 @@ interface GlossaryTermRepositoryInterface
     public function findTermBySlug(string $slug, int $languageId): ?array;
 
     /**
+     * Several terms by slug in one query: the same match, row and restrictions
+     * as findTermBySlug(), for each slug. Keyed by the slug as asked for;
+     * slugs without a term are absent.
+     *
+     * @param list<string> $slugs
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function findTermsBySlugs(array $slugs, int $languageId): array;
+
+    /**
      * The term in the given language, identified by the uid of its
      * default-language record — the value a PersistedAliasMapper hands over.
      *

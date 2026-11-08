@@ -108,6 +108,47 @@ final class GlossaryTermService
     }
 
     /**
+     * Several terms by slug at once: what findTermBySlug() returns for each,
+     * but with one query for all slugs this request has not asked for yet.
+     * A page links dozens of terms; one query per link was the cost.
+     *
+     * Shares the per-request cache with findTermBySlug(), in both directions.
+     *
+     * @param list<string> $slugs
+     *
+     * @return array<string, array<string, mixed>> keyed by slug; slugs without a term are absent
+     */
+    public function findTermsBySlugs(array $slugs, int $languageId = 0): array
+    {
+        if (!$this->isAvailable()) {
+            return [];
+        }
+
+        $missing = [];
+        foreach ($slugs as $slug) {
+            if ('' !== $slug && !array_key_exists($slug . '_' . $languageId, $this->termCacheBySlug)) {
+                $missing[$slug] = $slug;
+            }
+        }
+        if ([] !== $missing) {
+            $found = $this->repository->findTermsBySlugs(array_values($missing), $languageId);
+            foreach ($missing as $slug) {
+                $this->termCacheBySlug[$slug . '_' . $languageId] = $found[$slug] ?? null;
+            }
+        }
+
+        $terms = [];
+        foreach ($slugs as $slug) {
+            $term = $this->termCacheBySlug[$slug . '_' . $languageId] ?? null;
+            if (null !== $term) {
+                $terms[$slug] = $term;
+            }
+        }
+
+        return $terms;
+    }
+
+    /**
      * The term a detail URL points at. The Glossary route enhancer maps the
      * slug through a PersistedAliasMapper, so the routing argument is the uid
      * of the default-language record; a plain Extbase route passes the slug.
