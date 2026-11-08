@@ -130,12 +130,14 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         // PageLevelExtraSchemaTrait::buildAboutSubjects(). Without the
         // extension the service reports itself unavailable and nothing is
         // queried.
-        $pageData['_glossaryBasePath'] = $this->glossaryService->resolveGlossaryBasePath($pageData);
+        $glossaryLocation = $this->glossaryLocation($site, $pageData, $cacheable);
+        $pageData['_glossaryBasePath'] = $glossaryLocation['basePath'];
         $pageData['_glossaryRefs'] = $this->extractGlossaryReferencesFromHtml(
             (string) $response->getBody(),
             (int) ($pageData['_languageId'] ?? 0),
             $site,
-            $pageData['_glossaryBasePath'],
+            $glossaryLocation['basePath'],
+            $glossaryLocation['pagePaths'],
         );
         $contentElements = $this->getContentElements($request);
 
@@ -397,9 +399,13 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
      * attribute order; only slugs of existing terms are kept, which also rules
      * out foreign anchors that happen to carry the classes.
      *
+     * All slugs are looked up in one query (GlossaryTermService::findTermsBySlugs()).
+     *
+     * @param list<string>|null $glossaryPagePaths null: not known yet, built here if the page links a term
+     *
      * @return list<string>
      */
-    private function extractGlossaryReferencesFromHtml(string $body, int $languageId, Site $site, string $glossaryBasePath): array
+    private function extractGlossaryReferencesFromHtml(string $body, int $languageId, Site $site, string $glossaryBasePath, ?array $glossaryPagePaths): array
     {
         if (!$this->glossaryService->isAvailable() || '' === $body || !str_contains($body, 'dpnglossary')) {
             return [];
@@ -407,14 +413,68 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
 
         $slugs = $this->glossaryLinkExtractor->extractSlugs(
             $body,
-            $this->glossaryPagePaths($site, $glossaryBasePath),
+            $glossaryPagePaths ?? $this->glossaryPagePaths($site, $glossaryBasePath),
             $this->siteHosts($site),
         );
+        $terms = $this->glossaryService->findTermsBySlugs($slugs, $languageId);
 
         return array_values(array_filter(
             $slugs,
-            fn(string $slug): bool => null !== $this->glossaryService->findTermBySlug($slug, $languageId),
+            static fn(string $slug): bool => isset($terms[$slug]),
         ));
+    }
+
+    /**
+     * Where the glossary page lives: its slug in the page's language (the
+     * base of every DefinedTerm @id) and its URL path in every language of the
+     * site (to recognise term links). Both depend on the site, the language
+     * and the glossary page alone, not on the page being rendered, yet were
+     * resolved again for every page: one or two queries for the slug and a
+     * page lookup per language for the router.
+     *
+     * For a plain public request they are kept in the schema cache, tagged
+     * with the glossary page: editing that page (its slug, its translation,
+     * its visibility) flushes `pageId_<uid>` like it flushes the page cache.
+     * The site configuration is part of the key, so a changed language base or
+     * route enhancer starts a new entry. Previews, workspaces and logged-in
+     * visitors may see a different glossary page and resolve it themselves,
+     * exactly as before — as does a request without a glossary page or
+     * without dpn_glossary, which costs no query anyway.
+     *
+     * Outside the cache the page paths stay null and, as before, are built
+     * only when the page links a term. A cache miss builds them right away:
+     * once per site language and cache lifetime, for every later page.
+     *
+     * @param array<string, mixed> $pageData
+     *
+     * @return array{basePath: string, pagePaths: list<string>|null}
+     */
+    private function glossaryLocation(Site $site, array $pageData, bool $cacheable): array
+    {
+        $glossaryPageUid = (int) ($site->getSettings()->get('dpn-glossary.glossaryPage') ?? 0);
+        if (!$cacheable || $glossaryPageUid <= 0 || !$this->glossaryService->isAvailable()) {
+            return ['basePath' => $this->glossaryService->resolveGlossaryBasePath($pageData), 'pagePaths' => null];
+        }
+
+        // serialize(), not json_encode(): a key must never be the reason a
+        // page fails, and the site configuration is not guaranteed to be UTF-8.
+        $cacheIdentifier = 'glossary_location_' . hash('sha256', serialize([
+            $site->getIdentifier(),
+            (int) ($pageData['_languageId'] ?? 0),
+            $glossaryPageUid,
+            $site->getConfiguration(),
+        ]));
+        $cached = $this->cache->get($cacheIdentifier);
+        $cachedPaths = is_array($cached) ? $cached['pagePaths'] ?? null : null;
+        if (is_array($cached) && is_string($cached['basePath'] ?? null) && self::isListOfStrings($cachedPaths)) {
+            return ['basePath' => $cached['basePath'], 'pagePaths' => $cachedPaths];
+        }
+
+        $basePath = $this->glossaryService->resolveGlossaryBasePath($pageData);
+        $location = ['basePath' => $basePath, 'pagePaths' => $this->glossaryPagePaths($site, $basePath)];
+        $this->cache->set($cacheIdentifier, $location, ['pageId_' . $glossaryPageUid]);
+
+        return $location;
     }
 
     /**
@@ -444,6 +504,14 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         }
 
         return array_values(array_unique($paths));
+    }
+
+    /**
+     * @phpstan-assert-if-true list<string> $value
+     */
+    private static function isListOfStrings(mixed $value): bool
+    {
+        return is_array($value) && array_is_list($value) && $value === array_filter($value, is_string(...));
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Koh\StructuredContent\Application\Service;
 
+use Koh\StructuredContent\Domain\Contract\GlossaryTermBatchLookupInterface;
 use Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface;
 
 /**
@@ -105,6 +106,70 @@ final class GlossaryTermService
         $this->termCacheBySlug[$cacheKey] = $result;
 
         return $result;
+    }
+
+    /**
+     * Several terms by slug at once: what findTermBySlug() returns for each,
+     * but with one query for all slugs this request has not asked for yet.
+     * A page links dozens of terms; one query per link was the cost.
+     *
+     * Shares the per-request cache with findTermBySlug(), in both directions.
+     *
+     * @param list<string> $slugs
+     *
+     * @return array<string, array<string, mixed>> keyed by slug; slugs without a term are absent
+     */
+    public function findTermsBySlugs(array $slugs, int $languageId = 0): array
+    {
+        if (!$this->isAvailable()) {
+            return [];
+        }
+
+        $missing = [];
+        foreach ($slugs as $slug) {
+            if ('' !== $slug && !array_key_exists($slug . '_' . $languageId, $this->termCacheBySlug)) {
+                $missing[$slug] = $slug;
+            }
+        }
+        if ([] !== $missing) {
+            $found = $this->lookUpTerms(array_values($missing), $languageId);
+            foreach ($missing as $slug) {
+                $this->termCacheBySlug[$slug . '_' . $languageId] = $found[$slug] ?? null;
+            }
+        }
+
+        $terms = [];
+        foreach ($slugs as $slug) {
+            $term = $this->termCacheBySlug[$slug . '_' . $languageId] ?? null;
+            if (null !== $term) {
+                $terms[$slug] = $term;
+            }
+        }
+
+        return $terms;
+    }
+
+    /**
+     * One query when the repository can batch, one per slug otherwise.
+     *
+     * @param list<string> $slugs
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function lookUpTerms(array $slugs, int $languageId): array
+    {
+        if ($this->repository instanceof GlossaryTermBatchLookupInterface) {
+            return $this->repository->findTermsBySlugs($slugs, $languageId);
+        }
+        $found = [];
+        foreach ($slugs as $slug) {
+            $term = $this->repository->findTermBySlug($slug, $languageId);
+            if (null !== $term) {
+                $found[$slug] = $term;
+            }
+        }
+
+        return $found;
     }
 
     /**

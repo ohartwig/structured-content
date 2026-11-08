@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Koh\StructuredContent\Infrastructure\Persistence;
 
 use Doctrine\DBAL\ParameterType;
+use Koh\StructuredContent\Domain\Contract\GlossaryTermBatchLookupInterface;
 use Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
@@ -19,11 +20,19 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * would surface as a SQL error on an unrelated page rather than as a missing
  * glossary — so the guard sits where the query is.
  */
-final readonly class DoctrineGlossaryTermRepository implements GlossaryTermRepositoryInterface
+final readonly class DoctrineGlossaryTermRepository implements GlossaryTermRepositoryInterface, GlossaryTermBatchLookupInterface
 {
     private const TERM_TABLE = 'tx_dpnglossary_domain_model_term';
     private const DESCRIPTION_TABLE = 'tx_dpnglossary_domain_model_description';
     private const SYNONYM_TABLE = 'tx_dpnglossary_domain_model_synonym';
+
+    /**
+     * Each slug is bound once and used twice; well below every driver's
+     * parameter limit.
+     */
+    private const SLUGS_PER_QUERY = 200;
+
+    private const MATCH_COLUMN_PREFIX = 'slug_match_';
 
     public function __construct(
         private ConnectionPool $connectionPool,
@@ -88,6 +97,76 @@ final readonly class DoctrineGlossaryTermRepository implements GlossaryTermRepos
             ->fetchAssociative();
 
         return is_array($row) ? $row : null;
+    }
+
+    /**
+     * One query for many slugs instead of one per slug.
+     *
+     * Which row belongs to which slug is decided by the database, not here:
+     * each slug gets a select column `url_segment = :slug`. The column
+     * comparison uses the column's collation — case- and, on MariaDB,
+     * accent-insensitive — exactly as the WHERE clause of findTermBySlug()
+     * does. Matching the returned url_segment against the slug in PHP would
+     * drop a link whose case differs from the stored segment, which the
+     * single-slug query accepts.
+     *
+     * @param list<string> $slugs
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function findTermsBySlugs(array $slugs, int $languageId): array
+    {
+        $slugs = array_unique(array_filter($slugs, static fn(string $slug): bool => '' !== $slug));
+        if (!$this->isAvailable() || [] === $slugs) {
+            return [];
+        }
+
+        $terms = [];
+        foreach (array_chunk($slugs, self::SLUGS_PER_QUERY) as $chunk) {
+            $qb = $this->queryBuilderFor(self::TERM_TABLE);
+            $qb->select('uid', 'name', 'url_segment', 'tooltiptext', 'meta_description', 'seo_title')
+                ->from(self::TERM_TABLE);
+            $placeholders = [];
+            foreach ($chunk as $index => $slug) {
+                $placeholder = $qb->createNamedParameter($slug);
+                $placeholders[] = $placeholder;
+                $qb->addSelectLiteral(
+                    '(' . $qb->expr()->eq('url_segment', $placeholder) . ') AS '
+                    . $qb->quoteIdentifier(self::MATCH_COLUMN_PREFIX . $index),
+                );
+            }
+            $rows = $qb->where(
+                $qb->expr()->in('url_segment', $placeholders),
+                $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter($languageId, ParameterType::INTEGER)),
+            )
+                ->executeQuery()
+                ->fetchAllAssociative();
+
+            foreach ($rows as $row) {
+                $term = array_filter(
+                    $row,
+                    static fn(string $column): bool => !str_starts_with($column, self::MATCH_COLUMN_PREFIX),
+                    ARRAY_FILTER_USE_KEY,
+                );
+                foreach ($chunk as $index => $slug) {
+                    // First row wins, as setMaxResults(1) does for one slug.
+                    if (!isset($terms[$slug]) && self::isTrue($row[self::MATCH_COLUMN_PREFIX . $index] ?? null)) {
+                        $terms[$slug] = $term;
+                    }
+                }
+            }
+        }
+
+        return $terms;
+    }
+
+    /**
+     * A boolean column as the driver hands it over: 1/'1' (MariaDB, SQLite),
+     * true or 't' (PostgreSQL).
+     */
+    private static function isTrue(mixed $value): bool
+    {
+        return in_array($value, [true, 1, '1', 't'], true);
     }
 
     public function findTermByUid(int $uid, int $languageId): ?array

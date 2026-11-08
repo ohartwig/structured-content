@@ -1,0 +1,25 @@
+{
+  // Committed so mutation testing runs the Unit suite only. Without this file
+  // the CI job derives a configuration from the PSR-4 map and runs every suite
+  // in Tests/phpunit.xml, including Functional, which needs a database the job
+  // does not have: the initial test run then fails and no mutant is checked.
+  "source": {
+    "directories": [
+      "Classes"
+    ]
+  },
+  "testFramework": "phpunit",
+  "testFrameworkOptions": "--testsuite=Unit",
+  "phpUnit": {
+    "configDir": "Tests"
+  },
+  "timeout": 30,
+  "logs": {
+    "text": "var/infection/infection.log",
+    "html": "var/infection/infection.html",
+    "summary": "var/infection/summary.log"
+  },
+  "mutators": {
+    "@default": true
+  }
+}
