@@ -9,6 +9,7 @@ use Koh\StructuredContent\Application\Service\GlossaryTermService;
 use Koh\StructuredContent\Application\Service\SchemaOrgService;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Koh\StructuredContent\Domain\Contract\FreshnessEnricherInterface;
+use Koh\StructuredContent\Domain\Contract\GlossaryTermBatchLookupInterface;
 use Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface;
 use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
 use Koh\StructuredContent\Domain\Contract\SchemaMappingConfigurableInterface;
@@ -154,7 +155,7 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
 
     private function glossaryRepository(): GlossaryTermRepositoryInterface
     {
-        $repository = $this->createStub(GlossaryTermRepositoryInterface::class);
+        $repository = $this->createStubForIntersectionOfInterfaces([GlossaryTermRepositoryInterface::class, GlossaryTermBatchLookupInterface::class]);
         $repository->method('isAvailable')->willReturnCallback(fn (): bool => null !== $this->glossaryTerms);
         $repository->method('findPageSlug')->willReturnCallback(function (): string {
             ++$this->glossaryQueries['findPageSlug'];

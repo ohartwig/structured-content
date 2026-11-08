@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Koh\StructuredContent\Infrastructure\Persistence;
 
 use Doctrine\DBAL\ParameterType;
+use Koh\StructuredContent\Domain\Contract\GlossaryTermBatchLookupInterface;
 use Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
@@ -19,7 +20,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * would surface as a SQL error on an unrelated page rather than as a missing
  * glossary — so the guard sits where the query is.
  */
-final readonly class DoctrineGlossaryTermRepository implements GlossaryTermRepositoryInterface
+final readonly class DoctrineGlossaryTermRepository implements GlossaryTermRepositoryInterface, GlossaryTermBatchLookupInterface
 {
     private const TERM_TABLE = 'tx_dpnglossary_domain_model_term';
     private const DESCRIPTION_TABLE = 'tx_dpnglossary_domain_model_description';

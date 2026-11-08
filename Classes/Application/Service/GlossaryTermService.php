@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Koh\StructuredContent\Application\Service;
 
+use Koh\StructuredContent\Domain\Contract\GlossaryTermBatchLookupInterface;
 use Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface;
 
 /**
@@ -131,7 +132,7 @@ final class GlossaryTermService
             }
         }
         if ([] !== $missing) {
-            $found = $this->repository->findTermsBySlugs(array_values($missing), $languageId);
+            $found = $this->lookUpTerms(array_values($missing), $languageId);
             foreach ($missing as $slug) {
                 $this->termCacheBySlug[$slug . '_' . $languageId] = $found[$slug] ?? null;
             }
@@ -146,6 +147,29 @@ final class GlossaryTermService
         }
 
         return $terms;
+    }
+
+    /**
+     * One query when the repository can batch, one per slug otherwise.
+     *
+     * @param list<string> $slugs
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function lookUpTerms(array $slugs, int $languageId): array
+    {
+        if ($this->repository instanceof GlossaryTermBatchLookupInterface) {
+            return $this->repository->findTermsBySlugs($slugs, $languageId);
+        }
+        $found = [];
+        foreach ($slugs as $slug) {
+            $term = $this->repository->findTermBySlug($slug, $languageId);
+            if (null !== $term) {
+                $found[$slug] = $term;
+            }
+        }
+
+        return $found;
     }
 
     /**

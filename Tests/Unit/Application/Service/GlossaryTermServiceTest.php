@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Koh\StructuredContent\Tests\Unit\Application\Service;
 
 use Koh\StructuredContent\Application\Service\GlossaryTermService;
+use Koh\StructuredContent\Domain\Contract\GlossaryTermBatchLookupInterface;
 use Koh\StructuredContent\Domain\Contract\GlossaryTermRepositoryInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -42,9 +43,11 @@ final class GlossaryTermServiceTest extends TestCase
     /** @var array<string, array<string, mixed>|null> */
     private array $terms = [];
 
-    private function service(): GlossaryTermService
+    private function service(bool $canBatch = true): GlossaryTermService
     {
-        $repository = $this->createStub(GlossaryTermRepositoryInterface::class);
+        $repository = $canBatch
+            ? $this->createStubForIntersectionOfInterfaces([GlossaryTermRepositoryInterface::class, GlossaryTermBatchLookupInterface::class])
+            : $this->createStub(GlossaryTermRepositoryInterface::class);
         $repository->method('isAvailable')->willReturnCallback(fn (): bool => $this->available);
         $repository->method('findTermBySlug')->willReturnCallback(
             function (string $slug): ?array {
@@ -53,16 +56,18 @@ final class GlossaryTermServiceTest extends TestCase
                 return $this->terms[$slug] ?? null;
             },
         );
-        $repository->method('findTermsBySlugs')->willReturnCallback(
-            function (array $slugs, int $languageId): array {
-                ++$this->batchLookups;
-                $this->batchRequests[] = [$slugs, $languageId];
+        if ($canBatch) {
+            $repository->method('findTermsBySlugs')->willReturnCallback(
+                function (array $slugs, int $languageId): array {
+                    ++$this->batchLookups;
+                    $this->batchRequests[] = [$slugs, $languageId];
 
-                return array_filter(
-                    array_combine($slugs, array_map(fn (string $slug): ?array => $this->terms[$slug] ?? null, $slugs)),
-                );
-            },
-        );
+                    return array_filter(
+                        array_combine($slugs, array_map(fn (string $slug): ?array => $this->terms[$slug] ?? null, $slugs)),
+                    );
+                },
+            );
+        }
         $repository->method('findTermByUid')->willReturnCallback(
             function (int $uid): ?array {
                 ++$this->termLookups;
@@ -359,6 +364,28 @@ final class GlossaryTermServiceTest extends TestCase
         self::assertSame(1, $this->batchLookups);
         self::assertSame([[['json-ld', 'unknown', 'schema-org'], 1]], $this->batchRequests, 'each slug once, no empty slug');
         self::assertSame(0, $this->termLookups, 'no lookup per slug');
+    }
+
+    /**
+     * A repository that implements only GlossaryTermRepositoryInterface (the
+     * batch lookup is an optional, separate interface) still answers: one
+     * lookup per slug, the same result.
+     */
+    #[Test]
+    public function aRepositoryWithoutBatchLookupIsAskedPerSlug(): void
+    {
+        $this->terms = [
+            'schema-org' => ['uid' => 1, 'name' => 'Schema.org'],
+            'json-ld' => ['uid' => 2, 'name' => 'JSON-LD'],
+        ];
+        $service = $this->service(canBatch: false);
+
+        $terms = $service->findTermsBySlugs(['json-ld', 'unknown', 'schema-org', 'json-ld'], 1);
+
+        self::assertSame(['json-ld' => $this->terms['json-ld'], 'schema-org' => $this->terms['schema-org']], $terms);
+        self::assertSame(3, $this->termLookups, 'each distinct slug once');
+        self::assertNull($service->findTermBySlug('unknown', 1));
+        self::assertSame(3, $this->termLookups, 'misses are remembered too');
     }
 
     /**
