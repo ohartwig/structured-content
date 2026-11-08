@@ -3,6 +3,43 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.7](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.6...v2.14.7) (2026-11-08)
+
+### :zap: Refactor
+
+* **glossary:** move the batch lookup into its own optional interface ([b393e93](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/b393e93c6194b1700aef046ba4ea0113a5ede67b))
+
+### :fast_forward: Performance
+
+* **glossary:** look up linked terms in one query per page ([e6f0bd1](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/e6f0bd1a55779737ad59a75dc8270671cfe12275))
+
+### :white_check_mark: Tests
+
+* **infection:** run mutation testing on the Unit suite only ([3403e06](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/3403e06c5af70fd77b58e13603e8f573ef158dac))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([93012a3](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/93012a379281928a73f581b322ec75e0ee682de8))
+* **repo-templates:** sync ([e375993](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/e3759937f5867b3bdcafb04d642e1363b3799eb3))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.150-8.5 ([2aa516a](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/2aa516a4b39568bdf39f79f5b6946a21b111c781))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.149-8.5 ([fd83874](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/fd838741c5bdc2852ee6f4038d6a1c2c8e3c4e75))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.148-8.5 ([94664aa](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/94664aaa84393c243d85277eefa7d27fa85121e0))
+* **repo-templates:** sync ([5af14ae](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/5af14ae6286ea13aa35de1b9a26fe38448d56976))
+* **repo-templates:** sync ([1ceb425](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/1ceb425a3bdabca9bbb82dcf169bee65850b3c39))
+* **repo-templates:** sync ([1990764](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/1990764ec54fc037f19a44664bd21417b4be8275))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.144-8.5 ([f52a01d](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/f52a01dafc7ca13f684b8fb911bcdd7c53abaef4))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.143-8.5 ([d1f1515](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/d1f15158995c82e55d1aab008f38adc55817e241))
+* **repo-templates:** sync ([975639d](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/975639d8807f4255abcd186473932d9bcb1cb723))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.142-8.5 ([42e51bc](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/42e51bc8e07af4a4522aadbf65d474d2a1217ec2))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.140-8.5 ([9895eea](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/9895eeacfa70a02b44d2326ff9b0b900a7ee0344))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.139-8.5 ([a8c7900](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/a8c79007c10217e671a9a8482f922c087a826b9b))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.138-8.5 ([59fc7ad](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/59fc7ada3d41e8b2d48a70abe8fecac835b451ca))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.137-8.5 ([3d05b43](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/3d05b4310f5c1f35fcadb788b67269154a44dcd1))
+* **repo-templates:** sync ([cf28075](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/cf28075f92f1b8247b05a5302c90f6f041fc69ed))
+* **repo-templates:** sync ([fa66888](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/fa66888e9599b1c96ccb944a4817be9fafb86ce5))
+* **repo-templates:** sync ([daafe3a](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/daafe3ade621f30e5ddd32ae0f164bfee43edfc9))
+* **repo-templates:** sync ([9180234](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/9180234f9038185597b9d9daae2b84b82b3456c7))
+
 ## [2.14.6](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.5...v2.14.6) (2026-10-29)
 
 ### :bug: Fixes
