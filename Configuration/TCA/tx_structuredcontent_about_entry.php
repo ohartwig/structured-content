@@ -68,6 +68,12 @@ return [
         'transOrigDiffSourceField' => 'l10n_diffsource',
         'translationSource' => 'l10n_source',
         'sortby' => 'sorting',
+        // Workspace-aware because the parent (pages) is: a child that cannot be
+        // versioned cannot follow its page into a workspace. The core forces
+        // this flag itself for inline children of versioned tables, but only as
+        // a TCA migration with a deprecation notice; declaring it keeps the TCA
+        // honest. The t3ver_* columns are derived from it by the core.
+        'versioningWS' => true,
         // Records duerfen auf doktype=1-Pages (Standard) als IRRE-Kinder
         // angelegt werden — ohne diesen Flag verweigert TYPO3 das Anlegen
         // weil die Tabelle hideTable=true ist.
@@ -84,6 +90,26 @@ return [
         ],
     ],
     'columns' => [
+        // The link to the parent record (pages.tx_structuredcontent_about uses
+        // foreign_field, foreign_table_field and foreign_match_fields). DataHandler
+        // discards every field the TCA does not declare, so without these columns
+        // a record created on its own lost its parent and became an orphan.
+        // passthrough: stored as given, never rendered in the form.
+        'parent_uid' => [
+            'config' => [
+                'type' => 'passthrough',
+            ],
+        ],
+        'parent_table' => [
+            'config' => [
+                'type' => 'passthrough',
+            ],
+        ],
+        'parent_field' => [
+            'config' => [
+                'type' => 'passthrough',
+            ],
+        ],
         'schema_type' => [
             'label' => 'Schema.org Type',
             'description' => 'Schema.org-Klasse des Subjects. "Thing" als generischer Fallback wenn keine spezifischere Klasse passt.',
