@@ -3,6 +3,19 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.8](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.7...v2.14.8) (2026-11-09)
+
+### :bug: Fixes
+
+* **tca:** keep the parent link of about entries ([e5c889f](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/e5c889f0e8888fc335291a422227bf39e3d408dc))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([0aa3601](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/0aa36012ac81d067e22baf54febe84da2e70ff84))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.173-8.5 ([545233e](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/545233ed77f05651a5b8a2577a53bae0500b9f9a))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.172-8.5 ([61f9e72](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/61f9e72d86786ac71eec8eb1b52ac45964031959))
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.171-8.5 ([1b3d4b8](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/1b3d4b8b34c7872513dc729d94607febc93ea958))
+
 ## [2.14.7](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.6...v2.14.7) (2026-11-08)
 
 ### :zap: Refactor
