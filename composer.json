@@ -24,7 +24,8 @@
         "typo3/cms-frontend": "^14.0"
     },
     "require-dev": {
-        "koh/dev-typo3": "^1.0"
+        "koh/dev-typo3": "^1.0",
+        "typo3/cms-workspaces": "^14.0"
     },
     "suggest": {
         "moselwal/content-blocks-collection": "Liefert den Record-Type `moselwal_person` — Voraussetzung fuer das Seitenfeld `tx_structuredcontent_author_records` und die Person-/ProfilePage-Schema-Generatoren"
