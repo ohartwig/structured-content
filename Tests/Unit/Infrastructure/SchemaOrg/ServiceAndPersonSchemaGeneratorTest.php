@@ -675,6 +675,50 @@ final class ServiceAndPersonSchemaGeneratorTest extends TestCase
     }
 
     /**
+     * A translated team element owns its person records (attached to the
+     * translation's uid). Those are what the page shows, including when they
+     * were created on the translation and point at no default-language row.
+     */
+    #[Test]
+    public function aTranslatedElementUsesThePersonsOfTheTranslation(): void
+    {
+        $this->rowSets = [
+            [$this->personRow([
+                'uid' => 8,
+                'sys_language_uid' => 1,
+                'moselwal_person_firstname' => 'Grace',
+                'moselwal_person_lastname' => 'Hopper',
+                'moselwal_person_slug' => 'grace-hopper',
+            ])],
+        ];
+
+        $document = $this->person()->generate(
+            $this->page(['sys_language_uid' => 1]),
+            [['uid' => 1, '_LOCALIZED_UID' => 2, 'sys_language_uid' => 1, 'CType' => 'moselwal_team']],
+        );
+
+        self::assertSame('Grace Hopper', $document->data['name'] ?? null);
+    }
+
+    /**
+     * A translated team element without person records shows no team, so
+     * the schema names nobody — not the persons of the default language.
+     */
+    #[Test]
+    public function aTranslatedElementWithoutPersonsNamesNobody(): void
+    {
+        $this->rowSets = [[]];
+        $this->rows = [$this->personRow()];
+
+        $document = $this->person()->generate(
+            $this->page(['sys_language_uid' => 1]),
+            [['uid' => 1, '_LOCALIZED_UID' => 2, 'sys_language_uid' => 1, 'CType' => 'moselwal_team']],
+        );
+
+        self::assertSame([], $document->data);
+    }
+
+    /**
      * In der Standardsprache wird nach Uebersetzungen gar nicht erst gefragt.
      */
     #[Test]

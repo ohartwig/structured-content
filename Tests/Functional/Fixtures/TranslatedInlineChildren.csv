@@ -1,0 +1,30 @@
+"pages"
+,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent","deleted","hidden"
+,1,0,"Root","/",1,0,0,0,0
+,2,1,"Advisory","/advisory",1,0,0,0,0
+,3,1,"Advisory","/advisory",1,1,2,0,0
+"tt_content"
+,"uid","pid","CType","header","sys_language_uid","l18n_parent","l10n_source","sorting","deleted","hidden"
+,10,2,"moselwal_faq","Häufige Fragen",0,0,0,256,0,0
+,11,2,"moselwal_faq","Frequently asked questions",1,10,10,256,0,0
+,20,2,"moselwal_faq","Weitere Fragen",0,0,0,512,0,0
+,21,2,"moselwal_faq","More questions",1,20,20,512,0,0
+,30,2,"moselwal_faq","Unübersetzte Fragen",0,0,0,768,0,0
+,40,2,"moselwal_faq","Verbundene Fragen",0,0,0,1024,0,0
+,41,2,"moselwal_faq","Connected questions",1,40,40,1024,0,0
+,50,2,"moselwal_cards","Weiterlesen",0,0,0,1280,0,0
+,51,2,"moselwal_cards","Read on",1,50,50,1280,0,0
+,60,2,"moselwal_testimonials","Stimmen",0,0,0,1536,0,0
+,61,2,"moselwal_testimonials","Voices",1,60,60,1536,0,0
+"moselwal_card"
+,"uid","pid","foreign_table_parent_uid","tablenames","fieldname","sys_language_uid","l10n_parent","sorting","deleted","hidden","moselwal_card_header","moselwal_card_bodytext"
+,100,2,10,"tt_content","moselwal_faq_cards",0,0,1,0,0,"Warum hat es so lange gedauert?","Weil niemand hingesehen hat."
+,101,2,10,"tt_content","moselwal_faq_cards",0,0,2,0,0,"Müssen wir sofort updaten?","Ja."
+,110,2,11,"tt_content","moselwal_faq_cards",1,0,2,0,0,"Do we have to update immediately?","Yes."
+,111,2,11,"tt_content","moselwal_faq_cards",1,0,1,0,0,"Why did it take so long?","Because nobody looked."
+,112,2,11,"tt_content","moselwal_faq_cards",1,0,3,0,1,"Hidden question?","Hidden answer."
+,113,2,11,"tt_content","moselwal_faq_cards",2,0,4,0,0,"Question in another language?","Not for this page."
+,200,2,20,"tt_content","moselwal_faq_cards",0,0,1,0,0,"Gibt es eine zweite Frage?","Ja, diese."
+,300,2,30,"tt_content","moselwal_faq_cards",0,0,1,0,0,"Ist das übersetzt?","Nein."
+,400,2,40,"tt_content","moselwal_faq_cards",0,0,1,0,0,"Verbunden?","Ja, verbunden."
+,410,2,41,"tt_content","moselwal_faq_cards",1,400,1,0,0,"Connected?","Yes, connected."

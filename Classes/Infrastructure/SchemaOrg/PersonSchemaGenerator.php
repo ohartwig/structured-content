@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class PersonSchemaGenerator implements SchemaGeneratorInterface
 {
     use SanitizesSchemaTrait;
+    use TranslatedInlineChildrenTrait;
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -57,7 +58,7 @@ final class PersonSchemaGenerator implements SchemaGeneratorInterface
     {
         $entityBase = EntityBase::fromPageData($pageData);
 
-        $teamElementUids = [];
+        $teamElements = [];
         $seenUids = [];
         foreach ($contentElements as $element) {
             $uid = (int) ($element['uid'] ?? 0);
@@ -68,18 +69,18 @@ final class PersonSchemaGenerator implements SchemaGeneratorInterface
 
             $cType = strtolower((string) ($element['CType'] ?? ''));
             if (str_contains($cType, 'team')) {
-                $teamElementUids[] = $uid;
+                $teamElements[] = $element;
             }
         }
 
         $languageId = (int) ($pageData['sys_language_uid'] ?? 0);
 
         $persons = [];
-        foreach ($teamElementUids as $uid) {
-            if (0 === $uid) {
+        foreach ($teamElements as $element) {
+            if (0 === (int) ($element['uid'] ?? 0)) {
                 continue;
             }
-            foreach ($this->getPersonRows($uid, $languageId) as $row) {
+            foreach ($this->getPersonRows($element, $languageId) as $row) {
                 $person = $this->personBuilder->buildFromRow($row, $entityBase);
                 if (null !== $person) {
                     unset($person['@type']); // ItemList wraps with @type Person itself
@@ -130,13 +131,25 @@ final class PersonSchemaGenerator implements SchemaGeneratorInterface
     }
 
     /**
+     * The persons the page shows for this team element. A translated element
+     * brings its own person records (see TranslatedInlineChildrenTrait); only
+     * an element shown in the default language takes the overlay path below.
+     *
+     * @param array<string, mixed> $element content element as overlaid for the requested language
+     *
      * @return list<array<string, mixed>>
      */
-    private function getPersonRows(int $parentUid, int $languageId = 0): array
+    private function getPersonRows(array $element, int $languageId = 0): array
     {
         if (!$this->personRecordsAreAvailable()) {
             return [];
         }
+
+        $translatedRows = $this->loadChildrenOfTranslatedElement('moselwal_person', $element);
+        if (null !== $translatedRows) {
+            return $translatedRows;
+        }
+        $parentUid = (int) ($element['uid'] ?? 0);
 
         // Default-language rows first (canonical sorting + identity), then
         // overlay translations per l18n_parent. Same shape as the FAQ /

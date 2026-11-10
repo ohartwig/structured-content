@@ -50,7 +50,7 @@ final class PackagesGridProductSchemaGenerator implements SchemaGeneratorInterfa
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 if (!self::isEnterpriseCard($card) && (float) ($card['price'] ?? 0) > 0) {
                     return true;
                 }
@@ -84,7 +84,7 @@ final class PackagesGridProductSchemaGenerator implements SchemaGeneratorInterfa
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            $cards = array_merge($cards, $this->loadCards((int) ($element['uid'] ?? 0)));
+            $cards = array_merge($cards, $this->loadCards($element));
             if ('' === $ttHeader) {
                 $ttHeader = $this->sanitizeText((string) ($element['header'] ?? ''));
             }

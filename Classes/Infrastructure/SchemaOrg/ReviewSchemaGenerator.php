@@ -30,6 +30,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class ReviewSchemaGenerator implements SchemaGeneratorInterface
 {
     use SanitizesSchemaTrait;
+    use TranslatedInlineChildrenTrait;
 
     private const CTYPE_PATTERNS = ['testimonial', 'review'];
 
@@ -68,28 +69,29 @@ final class ReviewSchemaGenerator implements SchemaGeneratorInterface
     {
         $entityBase = EntityBase::fromPageData($pageData);
 
-        $reviewElementUids = [];
+        // Keyed by uid: one element appearing twice is read once.
+        $reviewElements = [];
         foreach ($contentElements as $element) {
+            $uid = (int) ($element['uid'] ?? 0);
+            if ($uid <= 0 || isset($reviewElements[$uid])) {
+                continue;
+            }
             $cType = strtolower((string) ($element['CType'] ?? ''));
             foreach (self::CTYPE_PATTERNS as $pattern) {
                 if (str_contains($cType, $pattern)) {
-                    $reviewElementUids[] = (int) ($element['uid'] ?? 0);
+                    $reviewElements[$uid] = $element;
                     break;
                 }
             }
         }
-        $reviewElementUids = array_values(array_unique(array_filter(
-            $reviewElementUids,
-            static fn (int $uid): bool => $uid > 0,
-        )));
 
         $languageId = (int) ($pageData['sys_language_uid'] ?? 0);
         $reviews = [];
         $ratingSum = 0.0;
         $ratingCount = 0;
 
-        foreach ($reviewElementUids as $uid) {
-            foreach ($this->fetchReviewCards($uid, $languageId) as $card) {
+        foreach ($reviewElements as $element) {
+            foreach ($this->fetchReviewCards($element, $languageId) as $card) {
                 $review = $this->buildReview($card, $entityBase);
                 if (null === $review) {
                     continue;
@@ -135,10 +137,15 @@ final class ReviewSchemaGenerator implements SchemaGeneratorInterface
     }
 
     /**
+     * The review cards the page shows for this element.
+     *
+     * @param array<string, mixed> $element content element as overlaid for the requested language
+     *
      * @return list<array<string, mixed>>
      */
-    private function fetchReviewCards(int $parentUid, int $languageId = 0): array
+    private function fetchReviewCards(array $element, int $languageId = 0): array
     {
+        $parentUid = (int) ($element['uid'] ?? 0);
         // Default-language cards first (canonical set + sorting source), then
         // overlay translations per l18n_parent. Same pattern as FAQ +
         // PackagesGrid + Person — keeps schema populated under site-level
@@ -151,6 +158,18 @@ final class ReviewSchemaGenerator implements SchemaGeneratorInterface
             'moselwal_card_rating_value',
             'moselwal_card_review_count',
         ];
+
+        // A translated element brings its own cards (see
+        // TranslatedInlineChildrenTrait); everything below only applies to an
+        // element shown in the default language.
+        $translatedCards = $this->loadChildrenOfTranslatedElement(
+            'moselwal_card',
+            $element,
+            ['uid', 'tstamp', 'crdate', 'sorting', ...$contentCols],
+        );
+        if (null !== $translatedCards) {
+            return $translatedCards;
+        }
 
         $qb = $this->connectionPool->getQueryBuilderForTable('moselwal_card');
         $qb->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
