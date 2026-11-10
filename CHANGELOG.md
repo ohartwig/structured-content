@@ -3,6 +3,12 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.9](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.8...v2.14.9) (2026-11-10)
+
+### :bug: Fixes
+
+* **schema:** read inline children of translated elements from the translation ([1ae70f6](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/1ae70f64e828b50b70b12d6b4ded46054d8a25ee))
+
 ## [2.14.8](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.7...v2.14.8) (2026-11-09)
 
 ### :bug: Fixes
