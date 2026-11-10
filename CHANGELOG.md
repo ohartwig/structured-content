@@ -3,6 +3,13 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.10](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.9...v2.14.10) (2026-11-10)
+
+### :bug: Fixes
+
+* **schema:** read episode meta of a translated podcast plugin from the translation ([6aea2c1](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/6aea2c1afa588ed8c2a26fb693417b030c892918))
+* **schema:** emit schema for free-mode content of translated pages ([6af545a](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/6af545a37fb4433d1dbff580736a5d5125658283))
+
 ## [2.14.9](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.8...v2.14.9) (2026-11-10)
 
 ### :bug: Fixes
