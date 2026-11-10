@@ -17,6 +17,9 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
+use TYPO3\CMS\Core\Context\LanguageAspect;
+use TYPO3\CMS\Core\Context\LanguageAspectFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Http\HtmlResponse;
@@ -24,6 +27,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Routing\PageArguments;
 use TYPO3\CMS\Core\Security\ContentSecurityPolicy\ConsumableNonce;
 use TYPO3\CMS\Core\Site\Entity\Site;
+use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use Koh\StructuredContent\Domain\Contract\SchemaMappingConfigurableInterface;
 use TYPO3\CMS\Frontend\Page\PageInformation;
 use Psr\Log\LoggerAwareInterface;
@@ -43,6 +47,7 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         private readonly GlossaryTermService $glossaryService,
         private readonly Context $context,
         private readonly GlossaryLinkExtractor $glossaryLinkExtractor = new GlossaryLinkExtractor(),
+        private readonly ?PageContentCollector $pageContentCollector = null,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -334,6 +339,15 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
     }
 
     /**
+     * The content elements the page renders in the requested language: see
+     * PageContentCollector.
+     *
+     * Before, only default-language rows were read and overlaid. Elements
+     * created directly in a translation (free mode, `l18n_parent = 0`) and
+     * elements for all languages never reached a generator, so a translated
+     * page whose content was partly or wholly free mode emitted no schema
+     * for it.
+     *
      * @return list<array<string, mixed>>
      */
     private function getContentElements(ServerRequestInterface $request): array
@@ -348,45 +362,33 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
             return [];
         }
 
-        // Translation-Overlay via TYPO3-Core: PageRepository::getLanguageOverlay()
-        // respektiert die Site-Config (fallbackType: fallback/strict/free),
-        // ist Workspace-aware und nutzt die kanonische Field-Overlay-Logic
-        // aus dem Core (System-Felder wie uid/sorting/CType bleiben aus
-        // dem Default-Row, Content-Felder gewinnen aus der Translation).
-        //
-        // Defaults (sys_language_uid=0) werden mit dem FrontendRestrictions-
-        // Container geladen — der getLanguageOverlay-Call macht dann den
-        // overlay-Schritt. Bei strict-Sprachen ohne Translation gibt der
-        // Call null zurueck → der Record wird aus dem Output entfernt.
-        $qb = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $qb->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
-        $defaults = $qb
-            ->select('*')
-            ->from('tt_content')
-            ->where(
-                $qb->expr()->eq('pid', $qb->createNamedParameter($pageUid, \Doctrine\DBAL\ParameterType::INTEGER)),
-                $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter(0, \Doctrine\DBAL\ParameterType::INTEGER)),
-            )
-            ->orderBy('sorting', 'ASC')
-            ->executeQuery()
-            ->fetchAllAssociative();
+        return ($this->pageContentCollector ?? new PageContentCollector($this->connectionPool))
+            ->findRenderedContent($pageUid, $this->languageAspect($request));
+    }
 
+    /**
+     * The language aspect the frontend rendered the page with. The context
+     * carries it once the page is resolved, including a content language
+     * that differs from the requested one; the site language's fallbackType
+     * is the fallback when the context belongs to another language.
+     */
+    private function languageAspect(ServerRequestInterface $request): LanguageAspect
+    {
         $siteLanguage = $request->getAttribute('language');
-        if (null === $siteLanguage || 0 === $siteLanguage->getLanguageId() || [] === $defaults) {
-            return $defaults;
-        }
+        $languageId = $siteLanguage instanceof SiteLanguage ? $siteLanguage->getLanguageId() : 0;
 
-        $pageRepository = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Domain\Repository\PageRepository::class);
-        $languageAspect = \TYPO3\CMS\Core\Context\LanguageAspectFactory::createFromSiteLanguage($siteLanguage);
-        $overlaid = [];
-        foreach ($defaults as $row) {
-            $row = $pageRepository->getLanguageOverlay('tt_content', $row, $languageAspect);
-            if (null !== $row) {
-                $overlaid[] = $row;
+        try {
+            $aspect = $this->context->getAspect('language');
+            if ($aspect->getId() === $languageId) {
+                return $aspect;
             }
+        } catch (AspectNotFoundException) {
+            // Built from the site language below.
         }
 
-        return $overlaid;
+        return $siteLanguage instanceof SiteLanguage
+            ? LanguageAspectFactory::createFromSiteLanguage($siteLanguage)
+            : new LanguageAspect();
     }
 
     /**

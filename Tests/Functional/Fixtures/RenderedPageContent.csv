@@ -1,0 +1,20 @@
+"pages"
+,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent","deleted","hidden"
+,1,0,"Root","/",1,0,0,0,0
+,2,1,"Beratung","/beratung",1,0,0,0,0
+,3,1,"Advisory","/advisory",1,1,2,0,0
+,4,1,"Conseil","/conseil",1,2,2,0,0
+"tt_content"
+,"uid","pid","CType","header","colPos","sys_language_uid","l18n_parent","l10n_source","sorting","deleted","hidden"
+,10,2,"text","Verbunden",0,0,0,0,256,0,0
+,11,2,"text","Connected",0,1,10,10,256,0,0
+,12,2,"text","Connecté",0,2,10,10,256,0,0
+,20,2,"text","Unübersetzt",0,0,0,0,512,0,0
+,30,2,"moselwal_faq","Free-mode questions",0,1,0,0,384,0,0
+,31,2,"text","Hidden free-mode text",0,1,0,0,400,0,1
+,40,2,"text","For all languages",1,-1,0,0,768,0,0
+,50,2,"text","Mode libre",0,2,0,0,300,0,0
+,60,99,"text","Other page",0,1,0,0,100,0,0
+"moselwal_card"
+,"uid","pid","foreign_table_parent_uid","tablenames","fieldname","sys_language_uid","l10n_parent","sorting","deleted","hidden","moselwal_card_header","moselwal_card_bodytext"
+,300,2,30,"tt_content","moselwal_faq_cards",1,0,1,0,0,"Is this free mode?","Yes, created on the translation."
