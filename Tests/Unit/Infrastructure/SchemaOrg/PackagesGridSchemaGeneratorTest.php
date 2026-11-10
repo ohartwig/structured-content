@@ -372,6 +372,36 @@ final class PackagesGridSchemaGeneratorTest extends TestCase
     }
 
     /**
+     * A translated grid element owns its cards: they hang on the
+     * translation's uid (`_LOCALIZED_UID`), not on the default-language
+     * element, and a free-mode translation has no `l10n_parent` to overlay
+     * by. The cards come from one query on the translation and are used as
+     * they are, the way the frontend renders them.
+     */
+    #[Test]
+    public function aTranslatedElementUsesTheCardsOfTheTranslation(): void
+    {
+        $this->rowSets = [
+            [$this->card(['uid' => 21, 'sys_language_uid' => 1, 'moselwal_card_header' => 'Starter (EN)'])],
+        ];
+
+        $generator = new PackagesGridProductSchemaGenerator(
+            $this->connectionPool(),
+            $this->context(1),
+            $this->fileRepository(),
+        );
+
+        $element = $this->gridBlock()[0];
+        $element['_LOCALIZED_UID'] = 2;
+        $element['sys_language_uid'] = 1;
+        $document = $generator->generate($this->page(), [$element]);
+        $encoded = json_encode($document->data, JSON_THROW_ON_ERROR);
+
+        self::assertStringContainsString('Starter (EN)', $encoded);
+        self::assertCount(1, $this->ordering, 'one query on the translation, no default-language overlay');
+    }
+
+    /**
      * In der Standardsprache wird gar nicht erst nach Uebersetzungen gefragt —
      * eine Abfrage, deren Ergebnis nie verwendet wird, ist eine Abfrage pro
      * Seitenaufbau zu viel.

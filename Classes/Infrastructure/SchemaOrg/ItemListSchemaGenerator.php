@@ -26,6 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class ItemListSchemaGenerator implements SchemaGeneratorInterface
 {
     use SanitizesSchemaTrait;
+    use TranslatedInlineChildrenTrait;
 
     /**
      * CType-Whitelist fuer ItemList-Generierung. Andere Card-CBs (z.B.
@@ -141,7 +142,7 @@ final class ItemListSchemaGenerator implements SchemaGeneratorInterface
             return null;
         }
 
-        $items = $this->loadCardItems((int) ($element['uid'] ?? 0), $siteBase, $languageId);
+        $items = $this->loadCardItems($element, $siteBase, $languageId);
 
         $list = [
             '@type' => 'ItemList',
@@ -166,13 +167,26 @@ final class ItemListSchemaGenerator implements SchemaGeneratorInterface
      * konvertiert sie zu Schema.org-ListItem-Eintraegen mit position,
      * name + url (wenn cta_link.url gepflegt).
      *
+     * A translated element brings its own cards (see
+     * TranslatedInlineChildrenTrait); only an element shown in the default
+     * language takes the overlay path below.
+     *
+     * @param array<string, mixed> $element content element as overlaid for the requested language
+     *
      * @return list<array<string, mixed>>
      */
-    private function loadCardItems(int $parentUid, string $siteBase, int $languageId): array
+    private function loadCardItems(array $element, string $siteBase, int $languageId): array
     {
+        $parentUid = (int) ($element['uid'] ?? 0);
         if ($parentUid <= 0) {
             return [];
         }
+        $columns = ['uid', 'moselwal_card_header', 'moselwal_card_cta_link', 'moselwal_card_cta_label'];
+        $translatedRows = $this->loadChildrenOfTranslatedElement('moselwal_card', $element, $columns);
+        if (null !== $translatedRows) {
+            return $this->toListItems($translatedRows, $siteBase);
+        }
+
         // Content-Blocks-Konvention: Fields bekommen den Table-Prefix
         // (moselwal_card.moselwal_card_header statt nur .header). Ohne
         // Prefix knallt der Query mit "Unknown column 'header'" auf
@@ -206,6 +220,16 @@ final class ItemListSchemaGenerator implements SchemaGeneratorInterface
             self::translationPointerField('moselwal_card'),
         );
 
+        return $this->toListItems($rows, $siteBase);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function toListItems(array $rows, string $siteBase): array
+    {
         $items = [];
         $position = 0;
         foreach ($rows as $row) {

@@ -185,7 +185,7 @@ final class ServiceSchemaGenerator implements SchemaGeneratorInterface
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 $price = (float) ($card['price'] ?? 0);
                 $uid = (int) ($card['uid'] ?? 0);
                 $header = $this->sanitizeText((string) ($card['header'] ?? ''));
@@ -251,7 +251,7 @@ final class ServiceSchemaGenerator implements SchemaGeneratorInterface
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 if (self::isEnterpriseCard($card)) {
                     continue;
                 }

@@ -18,16 +18,30 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 trait PackagesGridCardLoaderTrait
 {
+    use TranslatedInlineChildrenTrait;
+
     private const CARD_TABLE = 'moselwal_card';
     private const ENTERPRISE_SUFFIX_PREFIXES = ['ab', 'from'];
 
     /**
+     * The cards the page shows for this element. A translated element brings
+     * its own cards (see TranslatedInlineChildrenTrait); only an element shown
+     * in the default language takes the default-language path below.
+     *
+     * @param array<string, mixed> $element content element as overlaid for the requested language
+     *
      * @return list<array<string, mixed>>
      */
-    private function loadCards(int $contentUid): array
+    private function loadCards(array $element): array
     {
+        $contentUid = (int) ($element['uid'] ?? 0);
         if (0 === $contentUid) {
             return [];
+        }
+
+        $translatedCards = $this->loadChildrenOfTranslatedElement(self::CARD_TABLE, $element);
+        if (null !== $translatedCards) {
+            return array_map(self::stripCardPrefix(...), $translatedCards);
         }
 
         $languageId = 0;

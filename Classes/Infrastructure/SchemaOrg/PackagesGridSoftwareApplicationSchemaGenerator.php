@@ -56,7 +56,7 @@ final class PackagesGridSoftwareApplicationSchemaGenerator implements SchemaGene
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 if (!self::isEnterpriseCard($card) && (float) ($card['price'] ?? 0) > 0) {
                     return true;
                 }
@@ -86,7 +86,7 @@ final class PackagesGridSoftwareApplicationSchemaGenerator implements SchemaGene
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 if (self::isEnterpriseCard($card)) {
                     continue;
                 }

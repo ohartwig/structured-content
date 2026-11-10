@@ -48,7 +48,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
             if (($element['CType'] ?? '') !== self::PACKAGES_GRID_CTYPE) {
                 continue;
             }
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 if (self::isEnterpriseCard($card)) {
                     return true;
                 }
@@ -75,7 +75,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
                 continue;
             }
 
-            foreach ($this->loadCards((int) ($element['uid'] ?? 0)) as $card) {
+            foreach ($this->loadCards($element) as $card) {
                 if (!self::isEnterpriseCard($card)) {
                     continue;
                 }

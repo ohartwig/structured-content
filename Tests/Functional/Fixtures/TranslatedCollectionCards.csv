@@ -1,0 +1,6 @@
+"moselwal_card"
+,"uid","pid","foreign_table_parent_uid","tablenames","fieldname","sys_language_uid","l10n_parent","sorting","deleted","hidden","moselwal_card_header","moselwal_card_bodytext","moselwal_card_cta_link","moselwal_card_rating_value"
+,500,2,50,"tt_content","moselwal_cards_cards",0,0,1,0,0,"Einstieg","","https://example.com/de/einstieg",0
+,510,2,51,"tt_content","moselwal_cards_cards",1,0,1,0,0,"Getting started","","https://example.com/en/getting-started",0
+,600,2,60,"tt_content","moselwal_testimonials_cards",0,0,1,0,0,"Ada Lovelace","Sehr gut beraten.","",5
+,610,2,61,"tt_content","moselwal_testimonials_cards",1,0,1,0,0,"Ada Lovelace","Very good advice.","",5

@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class FaqSchemaGenerator implements SchemaGeneratorInterface
 {
     use SanitizesSchemaTrait;
+    use TranslatedInlineChildrenTrait;
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -60,7 +61,7 @@ final class FaqSchemaGenerator implements SchemaGeneratorInterface
             $cType = strtolower((string) ($element['CType'] ?? ''));
 
             if (str_contains($cType, 'faq')) {
-                $pairs = $this->extractFromCards((int) ($element['uid'] ?? 0));
+                $pairs = $this->extractFromCards($element);
             } elseif ($this->looksLikeFaq($element)) {
                 $pairs = $this->extractQaPairsFromText($element);
             } else {
@@ -102,14 +103,39 @@ final class FaqSchemaGenerator implements SchemaGeneratorInterface
     }
 
     /**
+     * The question/answer cards the page shows for this element.
+     *
+     * A translated element brings its own cards (see
+     * TranslatedInlineChildrenTrait). Only an element shown in the default
+     * language reads the default-language cards and overlays whatever
+     * translations point at them, which is what the frontend does for an
+     * untranslated element under fallbackType `fallback`.
+     *
+     * @param array<string, mixed> $element
+     *
      * @return list<array{question: string, answer: string}>
      */
-    private function extractFromCards(int $parentUid): array
+    private function extractFromCards(array $element): array
     {
+        $parentUid = (int) ($element['uid'] ?? 0);
         if (0 === $parentUid) {
             return [];
         }
 
+        $cards = $this->loadChildrenOfTranslatedElement(
+            'moselwal_card',
+            $element,
+            ['uid', 'sorting', 'moselwal_card_header', 'moselwal_card_bodytext'],
+        ) ?? $this->loadDefaultLanguageCards($parentUid);
+
+        return $this->toPairs($cards);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function loadDefaultLanguageCards(int $parentUid): array
+    {
         $languageId = 0;
         try {
             $languageId = $this->context->getAspect('language')->getId();
@@ -117,11 +143,11 @@ final class FaqSchemaGenerator implements SchemaGeneratorInterface
             // No language aspect available → default to language 0
         }
 
-        // Always load default-language cards first — they are the canonical set
-        // and provide the sorting source-of-truth. For non-default languages we
-        // then bulk-load translations and overlay them on a per-card basis.
-        // This matches TYPO3's site-level "fallback to default" behavior so a
-        // page that displays fallback FAQ content also emits a fallback Schema.
+        // The element itself is shown in the default language: either the
+        // request is for the default language, or the element has no
+        // translation and the site falls back. Default-language cards are the
+        // canonical set and provide the sorting; translations pointing at them
+        // (l10n_parent) are overlaid per card.
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('moselwal_card');
         $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
         $defaultCards = $queryBuilder
@@ -189,8 +215,18 @@ final class FaqSchemaGenerator implements SchemaGeneratorInterface
             unset($card);
         }
 
+        return $defaultCards;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $cards
+     *
+     * @return list<array{question: string, answer: string}>
+     */
+    private function toPairs(array $cards): array
+    {
         $pairs = [];
-        foreach ($defaultCards as $card) {
+        foreach ($cards as $card) {
             $question = $this->sanitizeText((string) ($card['moselwal_card_header'] ?? ''));
             $answer = $this->sanitizeText((string) ($card['moselwal_card_bodytext'] ?? ''));
             if ('' !== $question && '' !== $answer) {
