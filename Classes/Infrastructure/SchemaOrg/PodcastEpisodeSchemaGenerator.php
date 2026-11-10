@@ -25,6 +25,7 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
 {
     use SanitizesSchemaTrait;
     use PodcastFeedCacheReaderTrait;
+    use TranslatedInlineChildrenTrait;
 
     public function __construct(
         private readonly CacheManager $cacheManager,
@@ -173,10 +174,13 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
         // nur am Listing-Plugin gepflegt werden, nicht doppelt am Detail-
         // Container.
         $transcript = '';
-        $pluginUid = $this->findPodcastPluginUidOnPage(
-            (int) ($pageData['uid'] ?? 0),
-            $languageId,
-        );
+        $pluginUid = $this->episodeMetaParentUid($contentElements);
+        if (0 === $pluginUid) {
+            $pluginUid = $this->findPodcastPluginUidOnPage(
+                (int) ($pageData['uid'] ?? 0),
+                $languageId,
+            );
+        }
         if ($pluginUid > 0) {
             $transcript = $this->episodeGuestsRepository->findTranscriptByPluginAndSlug(
                 $pluginUid,
@@ -298,13 +302,10 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
         int $languageId,
     ): array {
         $uids = [];
-        $pluginUid = 0;
+        $pluginUid = $this->episodeMetaParentUid($contentElements);
         foreach ($contentElements as $element) {
             if (($element['CType'] ?? '') !== 'contentblockscollection_podcast') {
                 continue;
-            }
-            if (0 === $pluginUid) {
-                $pluginUid = (int) ($element['uid'] ?? 0);
             }
             $value = $element['moselwal_videopodcastfeed_hosts'] ?? null;
             $uids = array_merge($uids, $this->personBuilder->parseUidList($value));
@@ -380,6 +381,38 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
         }
 
         return $persons;
+    }
+
+    /**
+     * The uid the episode meta records of the page's podcast plugin are
+     * attached to (`foreign_table_parent_uid`), or 0 without a plugin.
+     *
+     * A translated plugin owns its episode meta records, as a translated
+     * element owns its inline children (see TranslatedInlineChildrenTrait):
+     * they hang on the translation's uid, in free mode without any
+     * `l10n_parent`. An overlaid plugin row keeps the default-language `uid`
+     * and carries the translation's uid in `_LOCALIZED_UID`; reading the meta
+     * by `uid` and the page's language found nothing, so a translated episode
+     * page lost its guests even where the editors had maintained them.
+     *
+     * The repository keeps filtering by the page's language. A translated
+     * plugin without meta records therefore yields no guests and no
+     * transcript, and neither does a default-language plugin shown on a
+     * translated page: there is no fallback to the default-language meta
+     * (and its transcript in the default language), just as the plugin's
+     * own episode view has none.
+     *
+     * @param list<array<string, mixed>> $contentElements
+     */
+    private function episodeMetaParentUid(array $contentElements): int
+    {
+        foreach ($contentElements as $element) {
+            if (($element['CType'] ?? '') === 'contentblockscollection_podcast') {
+                return self::inlineParentUid($element);
+            }
+        }
+
+        return 0;
     }
 
     /**

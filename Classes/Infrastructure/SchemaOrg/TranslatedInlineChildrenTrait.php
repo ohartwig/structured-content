@@ -27,6 +27,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * children of the default-language element. When the translation has no
  * children, the page shows none.
  *
+ * An element created directly in a translation (free mode, `l18n_parent =
+ * 0`) reaches the generators as its own row, with its own `uid` and its
+ * language in `sys_language_uid` and no `_LOCALIZED_UID`; so does every
+ * translation under fallbackType `free`. Its children are attached to that
+ * `uid`, exactly like those of an overlaid translation are attached to
+ * `_LOCALIZED_UID`. inlineParentUid() names the uid the children hang on in
+ * either case.
+ *
  * Reading the default-language children and overlaying them per
  * `l10n_parent` is only right for an element that is NOT translated and is
  * displayed in the default language (fallbackType `fallback`). For a
@@ -54,7 +62,10 @@ trait TranslatedInlineChildrenTrait
      */
     private function loadChildrenOfTranslatedElement(string $table, array $element, array $columns = []): ?array
     {
-        $localizedUid = (int) ($element['_LOCALIZED_UID'] ?? 0);
+        if (!self::isShownAsTranslation($element)) {
+            return null;
+        }
+        $localizedUid = self::inlineParentUid($element);
         if ($localizedUid <= 0) {
             return null;
         }
@@ -91,5 +102,33 @@ trait TranslatedInlineChildrenTrait
         }
 
         return $children;
+    }
+
+    /**
+     * Whether the element is shown as a translation: overlaid onto its
+     * default-language row (`_LOCALIZED_UID`), or a row in a translation
+     * language of its own (free mode, or any translation under fallbackType
+     * `free`).
+     *
+     * @param array<string, mixed> $element
+     */
+    private static function isShownAsTranslation(array $element): bool
+    {
+        return (int) ($element['_LOCALIZED_UID'] ?? 0) > 0
+            || (int) ($element['sys_language_uid'] ?? 0) > 0;
+    }
+
+    /**
+     * The uid the element's inline children are attached to
+     * (`foreign_table_parent_uid`): the translation's uid for an overlaid
+     * element, the element's own uid otherwise.
+     *
+     * @param array<string, mixed> $element
+     */
+    private static function inlineParentUid(array $element): int
+    {
+        $localizedUid = (int) ($element['_LOCALIZED_UID'] ?? 0);
+
+        return $localizedUid > 0 ? $localizedUid : (int) ($element['uid'] ?? 0);
     }
 }

@@ -1,0 +1,23 @@
+"pages"
+,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent","deleted","hidden"
+,1,0,"Root","/",1,0,0,0,0
+,2,1,"Podcast mit Gästen","/podcast-mit-gaesten",1,0,0,0,0
+,3,1,"Podcast with guests","/podcast-with-guests",1,1,2,0,0
+,4,1,"Podcast ohne englische Angaben","/podcast-ohne-angaben",1,0,0,0,0
+,5,1,"Podcast without English meta","/podcast-without-meta",1,1,4,0,0
+"tt_content"
+,"uid","pid","CType","header","sys_language_uid","l18n_parent","l10n_source","sorting","deleted","hidden","moselwal_videopodcastfeed_feed_url","moselwal_videopodcastfeed_hosts","moselwal_videopodcastfeed_episode_meta"
+,100,2,"contentblockscollection_podcast","Podcast",0,0,0,512,0,0,"https://example.com/feed.xml","1",1
+,101,2,"contentblockscollection_podcast","Podcast",1,100,100,768,0,0,"https://example.com/feed.xml","1",1
+,200,4,"contentblockscollection_podcast","Podcast",0,0,0,512,0,0,"https://example.com/feed.xml","1",1
+,201,4,"contentblockscollection_podcast","Podcast",1,200,200,768,0,0,"https://example.com/feed.xml","1",0
+"moselwal_podcast_episode_meta"
+,"uid","pid","foreign_table_parent_uid","tablenames","fieldname","sys_language_uid","l10n_parent","sorting","deleted","hidden","moselwal_podcastepisodemeta_episode_slug","moselwal_podcastepisodemeta_guests","moselwal_podcastepisodemeta_absent_hosts","moselwal_podcastepisodemeta_transcript"
+,1,2,100,"tt_content","moselwal_videopodcastfeed_episode_meta",0,0,1,0,0,"folge-12-wie-suchmaschinen-podcasts-lesen","2","","Deutsches Transkript."
+,2,2,101,"tt_content","moselwal_videopodcastfeed_episode_meta",1,0,1,0,0,"folge-12-wie-suchmaschinen-podcasts-lesen","3","","English transcript."
+,3,4,200,"tt_content","moselwal_videopodcastfeed_episode_meta",0,0,1,0,0,"folge-12-wie-suchmaschinen-podcasts-lesen","2","","Deutsches Transkript."
+"moselwal_person"
+,"uid","pid","deleted","hidden","moselwal_person_firstname","moselwal_person_lastname","moselwal_person_slug"
+,1,1,0,0,"Hanna","Host","hanna-host"
+,2,1,0,0,"Gerda","Gast","gerda-gast"
+,3,1,0,0,"Grace","Guest","grace-guest"
