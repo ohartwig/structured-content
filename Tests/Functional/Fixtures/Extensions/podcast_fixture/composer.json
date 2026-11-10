@@ -1,0 +1,14 @@
+{
+    "name": "koh/structured-content-podcast-fixture",
+    "description": "Test fixture: the podcast plugin columns and the episode meta and person tables that Content Blocks would provide.",
+    "type": "typo3-cms-extension",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "typo3/cms-core": "^14.0"
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "podcast_fixture"
+        }
+    }
+}
