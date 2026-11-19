@@ -378,11 +378,11 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
 
         self::assertStringContainsString('"datePublished": "2026-11-19T05:00:00+00:00"', $body);
         self::assertStringNotContainsString(
-            '"datePublished": "' . new \DateTimeImmutable('@1785200000')->format('c') . '"',
+            '"datePublished": "' . (new \DateTimeImmutable('@1785200000'))->format('c') . '"',
             $body,
         );
         self::assertStringContainsString(
-            '"dateModified": "' . new \DateTimeImmutable('@1785300000')->format('c') . '"',
+            '"dateModified": "' . (new \DateTimeImmutable('@1785300000'))->format('c') . '"',
             $body,
             'a date the generator did not set still comes from the page',
         );
