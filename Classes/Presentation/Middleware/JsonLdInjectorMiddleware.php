@@ -188,10 +188,15 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
             'FAQPage', 'CollectionPage', 'CreativeWork',
         ];
 
+        // The page's dates are a fallback, never an override: a generator that
+        // knows its entity's own dates keeps them. Every podcast episode is
+        // rendered on one shared detail page, so the page's crdate as
+        // datePublished gave all episodes the date that page was created,
+        // while uploadDate (the feed's pubDate) said something else.
         $enrichedDocuments = [];
         foreach ($documents as $document) {
             $enrichedData = in_array($document->schemaType, $freshnessSchemaTypes, true)
-                ? array_merge($document->data, $freshnessProperties)
+                ? array_merge($freshnessProperties, $document->data)
                 : $document->data;
             $enrichedDocuments[] = new JsonLdDocument($document->schemaType, $enrichedData);
         }

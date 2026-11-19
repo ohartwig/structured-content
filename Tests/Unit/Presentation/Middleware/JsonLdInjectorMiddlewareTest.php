@@ -362,6 +362,33 @@ final class JsonLdInjectorMiddlewareTest extends TestCase
     }
 
     /**
+     * The page's dates fill in what a generator leaves out; they never
+     * replace what it set. An episode on the shared detail page carries the
+     * feed's pubDate, not the date that page was created.
+     */
+    #[Test]
+    public function aGeneratorsOwnDatesWinOverThePageDates(): void
+    {
+        $this->documents = [new JsonLdDocument('PodcastEpisode', [
+            'name' => 'Episode 34',
+            'datePublished' => '2026-11-19T05:00:00+00:00',
+        ])];
+
+        $body = (string) $this->middleware()->process($this->request(), $this->handler())->getBody();
+
+        self::assertStringContainsString('"datePublished": "2026-11-19T05:00:00+00:00"', $body);
+        self::assertStringNotContainsString(
+            '"datePublished": "' . (new \DateTimeImmutable('@1785200000'))->format('c') . '"',
+            $body,
+        );
+        self::assertStringContainsString(
+            '"dateModified": "' . (new \DateTimeImmutable('@1785300000'))->format('c') . '"',
+            $body,
+            'a date the generator did not set still comes from the page',
+        );
+    }
+
+    /**
      * Die dritte Eigenschaft: ein Dokument ohne Inhalt wird nicht
      * ausgeliefert. `{"@type":"Product"}` allein sagt einem Crawler, dass
      * hier ein Produkt ist, und dann nichts — das ist schlechter als
