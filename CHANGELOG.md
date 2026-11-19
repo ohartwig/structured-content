@@ -3,6 +3,20 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.11](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.10...v2.14.11) (2026-11-19)
+
+### :bug: Fixes
+
+* **jsonld:** a generator's own dates win over the page's ([2018040](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/201804041173875691a1279ce4dba9aa32b23780))
+
+### :white_check_mark: Tests
+
+* **jsonld:** keep the regression test parseable on PHP 8.3 ([880bb24](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/880bb246672c87c35ee5eb2689da802cbe53655b))
+
+### :repeat: Chores
+
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.246-8.5 ([147b47b](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/147b47b736722af65462daec640a32c4de550d8e))
+
 ## [2.14.10](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.9...v2.14.10) (2026-11-10)
 
 ### :bug: Fixes
