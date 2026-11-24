@@ -32,7 +32,7 @@ final class SiteFileUrl
     public static function baseFromPageData(array $pageData): string
     {
         $root = $pageData['_siteRootBase'] ?? '';
-        if (is_string($root) && '' !== new Uri($root)->getHost()) {
+        if (is_string($root) && '' !== (new Uri($root))->getHost()) {
             return $root;
         }
 
