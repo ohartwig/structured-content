@@ -31,7 +31,17 @@ final class SiteFileUrlTest extends TestCase
             ['_siteRootBase' => '/', '_siteBase' => 'https://example.com:8443/en/'],
             'https://example.com:8443/',
         ];
+        yield 'the site base is used as configured, not reduced to the language origin' => [
+            ['_siteRootBase' => 'https://files.example.org/site/', '_siteBase' => 'https://example.com/en/'],
+            'https://files.example.org/site/',
+        ];
+        yield 'a site base that is not a string is ignored' => [
+            ['_siteRootBase' => 42, '_siteBase' => 'https://example.com/en/'],
+            'https://example.com/',
+        ];
         yield 'nothing usable' => [['_siteBase' => '/en/'], ''];
+        yield 'no base at all' => [[], ''];
+        yield 'a language base that is not a string' => [['_siteBase' => 42], ''];
     }
 
     /** @param array<string, mixed> $pageData */
@@ -53,6 +63,9 @@ final class SiteFileUrlTest extends TestCase
         yield 'protocol-relative URL gets https' => ['//cdn.example.net/a.png', 'https://example.com/', 'https://cdn.example.net/a.png'];
         yield 'no base leaves the path' => ['fileadmin/a.png', '', 'fileadmin/a.png'];
         yield 'empty stays empty' => ['', 'https://example.com/', ''];
+        yield 'surrounding whitespace is dropped' => [' fileadmin/a.png ', 'https://example.com/', 'https://example.com/fileadmin/a.png'];
+        yield 'an absolute URL in upper case passes through' => ['HTTPS://cdn.example.net/a.png', 'https://example.com/', 'HTTPS://cdn.example.net/a.png'];
+        yield 'a scheme inside the path is still a path' => ['img/https://a.png', 'https://example.com/', 'https://example.com/img/https://a.png'];
     }
 
     #[Test]

@@ -60,10 +60,6 @@ final class SiteFileUrl
         if (str_starts_with($url, '//')) {
             return 'https:' . $url;
         }
-        if ('' === $fileBase) {
-            return $url;
-        }
-
         $base = new Uri($fileBase);
         if ('' === $base->getHost()) {
             return $url;
