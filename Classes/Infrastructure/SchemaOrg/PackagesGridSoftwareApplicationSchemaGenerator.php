@@ -102,7 +102,7 @@ final class PackagesGridSoftwareApplicationSchemaGenerator implements SchemaGene
                 }
 
                 if (null === $imageUrl) {
-                    $imageUrl = $this->resolveCardImage((int) ($card['uid'] ?? 0), $siteBase);
+                    $imageUrl = $this->resolveCardImage((int) ($card['uid'] ?? 0), SiteFileUrl::baseFromPageData($pageData));
                 }
 
                 $cardHeader = $this->sanitizeText((string) ($card['header'] ?? ''));
@@ -176,7 +176,7 @@ final class PackagesGridSoftwareApplicationSchemaGenerator implements SchemaGene
      * in PackagesGridProductSchemaGenerator so both top-level entities can
      * surface a screenshot without re-querying.
      */
-    private function resolveCardImage(int $cardUid, string $siteBase): ?string
+    private function resolveCardImage(int $cardUid, string $fileBase): ?string
     {
         if (0 === $cardUid) {
             return null;
@@ -198,6 +198,6 @@ final class PackagesGridSoftwareApplicationSchemaGenerator implements SchemaGene
             return $publicUrl;
         }
 
-        return rtrim($siteBase, '/') . '/' . ltrim($publicUrl, '/');
+        return SiteFileUrl::resolve($publicUrl, $fileBase);
     }
 }

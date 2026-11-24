@@ -267,6 +267,22 @@ final class PodcastSeriesSchemaGeneratorTest extends TestCase
      * A feed date becomes an ISO 8601 date in the full episode schema; a date
      * the parser cannot read is dropped rather than breaking the document.
      */
+    /**
+     * A local thumbnail is a file and resolves against the site root, not
+     * against the language base the episode schemas are built with.
+     */
+    #[Test]
+    public function aLocalThumbnailResolvesAgainstTheSiteRootOnALanguageBase(): void
+    {
+        $item = $this->generator()->buildEpisodeSchemas(
+            [$this->episode(['localImage' => 'fileadmin/user_upload/12.png'])],
+            'en',
+            'https://example.com/en/',
+        )[0];
+
+        self::assertSame('https://example.com/fileadmin/user_upload/12.png', $item['thumbnailUrl']);
+    }
+
     #[Test]
     public function anEpisodeCarriesItsPublicationDateAndSkipsAnUnreadableOne(): void
     {

@@ -114,6 +114,9 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         // language base so every page in every language references the same
         // node. See EntityBase.
         $pageData['_entityBase'] = (string) $site->getDefaultLanguage()->getBase();
+        // Files are not language-scoped either: images and thumbnails resolve
+        // against the site base, not the language base. See SiteFileUrl.
+        $pageData['_siteRootBase'] = (string) $site->getBase();
         $pageData['_rootPageId'] = $site->getRootPageId();
         $pageData['_rootline'] = $pageInformation->getRootLine();
         $pageData['_routingArguments'] = $routeArguments;
