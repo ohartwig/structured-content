@@ -125,7 +125,7 @@ final class PodcastSeriesSchemaGenerator implements SchemaGeneratorInterface
                     }
                 }
                 $seriesImage = (string) ($meta['image'] ?? '');
-                $data['hasPart'] = $this->buildEpisodeReferences($episodes, $episodeBaseUrl, $seriesImage);
+                $data['hasPart'] = $this->buildEpisodeReferences($episodes, $episodeBaseUrl, SiteFileUrl::baseFromPageData($pageData), $seriesImage);
             }
         }
 
@@ -258,7 +258,7 @@ final class PodcastSeriesSchemaGenerator implements SchemaGeneratorInterface
      *
      * @return list<array<string, mixed>>
      */
-    private function buildEpisodeReferences(array $episodes, string $pageUrl, string $seriesImage = ''): array
+    private function buildEpisodeReferences(array $episodes, string $pageUrl, string $fileBase, string $seriesImage = ''): array
     {
         $refs = [];
 
@@ -278,7 +278,7 @@ final class PodcastSeriesSchemaGenerator implements SchemaGeneratorInterface
             ];
 
             if ('' !== $imageUrl) {
-                $ref['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, $pageUrl);
+                $ref['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, $fileBase);
             }
 
             $refs[] = $ref;
@@ -382,7 +382,7 @@ final class PodcastSeriesSchemaGenerator implements SchemaGeneratorInterface
                 $imageUrl = $seriesImage;
             }
             if ('' !== $imageUrl) {
-                $item['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, $siteBase);
+                $item['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, SiteFileUrl::baseFromPageData(['_siteBase' => $siteBase]));
             }
 
             $enclosureUrl = (string) ($episode['enclosureUrl'] ?? '');

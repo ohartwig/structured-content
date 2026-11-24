@@ -157,7 +157,7 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
         }
 
         if ('' !== $imageUrl) {
-            $data['thumbnailUrl'] = $this->absolutize($imageUrl, $siteBase);
+            $data['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, SiteFileUrl::baseFromPageData($pageData));
         }
 
         // Transcript — Schema.org/PodcastEpisode.transcript akzeptiert plain
@@ -250,7 +250,7 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
                 $mediaObject['description'] = $this->sanitizeText($description);
             }
             if ('' !== $imageUrl) {
-                $mediaObject['thumbnailUrl'] = $this->absolutize($imageUrl, $siteBase);
+                $mediaObject['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, SiteFileUrl::baseFromPageData($pageData));
             }
             if (isset($data['datePublished'])) {
                 $mediaObject['uploadDate'] = $data['datePublished'];
@@ -507,10 +507,6 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
      * Paths — wir prefixen mit dem Site-Base, lassen aber bereits absolute
      * URLs unangetastet.
      */
-    private function absolutize(string $url, string $siteBase): string
-    {
-        return SiteFileUrl::resolve($url, $siteBase);
-    }
 
     private function formatIso8601Duration(int $seconds): string
     {

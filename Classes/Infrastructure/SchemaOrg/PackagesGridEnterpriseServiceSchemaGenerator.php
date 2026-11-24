@@ -79,7 +79,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
                 if (!self::isEnterpriseCard($card)) {
                     continue;
                 }
-                $service = $this->cardToService($card, $pageUrl, $siteBase);
+                $service = $this->cardToService($card, $pageUrl, SiteFileUrl::baseFromPageData($pageData));
                 if (null !== $service) {
                     $services[] = $service;
                 }
@@ -112,7 +112,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
      *
      * @return array<string, mixed>|null
      */
-    private function cardToService(array $card, string $pageUrl, string $siteBase): ?array
+    private function cardToService(array $card, string $pageUrl, string $fileBase): ?array
     {
         $name = $this->sanitizeText((string) ($card['header'] ?? ''));
         if ('' === $name) {
@@ -135,7 +135,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
             'description' => $this->sanitizeText((string) ($card['bodytext'] ?? '')),
         ];
 
-        $imageUrl = $this->resolveCardImage((int) ($card['uid'] ?? 0), $siteBase);
+        $imageUrl = $this->resolveCardImage((int) ($card['uid'] ?? 0), $fileBase);
         if (null !== $imageUrl) {
             $data['image'] = $imageUrl;
         }
@@ -187,7 +187,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
         return $data;
     }
 
-    private function resolveCardImage(int $cardUid, string $siteBase): ?string
+    private function resolveCardImage(int $cardUid, string $fileBase): ?string
     {
         if (0 === $cardUid) {
             return null;
@@ -211,11 +211,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
         if (1 === preg_match('#^https?://#i', $publicUrl)) {
             return $publicUrl;
         }
-        if ('' === $siteBase) {
-            return $publicUrl;
-        }
-
-        return SiteFileUrl::resolve($publicUrl, $siteBase);
+        return SiteFileUrl::resolve($publicUrl, $fileBase);
     }
 
     private function buildPageUrl(string $siteBase, string $pageSlug): string

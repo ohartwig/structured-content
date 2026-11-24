@@ -165,7 +165,7 @@ final class PackagesGridProductSchemaGenerator implements SchemaGeneratorInterfa
                 $brand = $this->sanitizeText((string) ($card['brand'] ?? ''));
             }
             if (null === $imageUrl) {
-                $imageUrl = $this->resolveCardImage((int) ($card['uid'] ?? 0), $siteBase);
+                $imageUrl = $this->resolveCardImage((int) ($card['uid'] ?? 0), SiteFileUrl::baseFromPageData($pageData));
             }
 
             $rv = (float) ($card['rating_value'] ?? 0);
@@ -287,7 +287,7 @@ final class PackagesGridProductSchemaGenerator implements SchemaGeneratorInterfa
      * Resolves the first sys_file_reference attached to the card's `image`
      * field and returns an absolute URL Google can fetch.
      */
-    private function resolveCardImage(int $cardUid, string $siteBase): ?string
+    private function resolveCardImage(int $cardUid, string $fileBase): ?string
     {
         if (0 === $cardUid) {
             return null;
@@ -311,11 +311,7 @@ final class PackagesGridProductSchemaGenerator implements SchemaGeneratorInterfa
         if (1 === preg_match('#^https?://#i', $publicUrl)) {
             return $publicUrl;
         }
-        if ('' === $siteBase) {
-            return $publicUrl;
-        }
-
-        return SiteFileUrl::resolve($publicUrl, $siteBase);
+        return SiteFileUrl::resolve($publicUrl, $fileBase);
     }
 
     private function buildPageUrl(string $siteBase, string $pageSlug): string

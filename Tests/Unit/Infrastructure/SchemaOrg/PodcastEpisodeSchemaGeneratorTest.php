@@ -413,7 +413,7 @@ final class PodcastEpisodeSchemaGeneratorTest extends TestCase
         ]);
 
         $document = $this->generator()->generate(
-            $this->page(['_siteBase' => 'https://example.com/en/', '_language' => 'en-GB', 'sys_language_uid' => 1]),
+            $this->page(['_siteBase' => 'https://example.com/en/', '_siteRootBase' => 'https://example.com/', '_language' => 'en-GB', 'sys_language_uid' => 1]),
             $this->podcastElement(),
         );
 
