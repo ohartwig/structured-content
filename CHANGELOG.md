@@ -3,6 +3,26 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.14.12](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.11...v2.14.12) (2026-11-24)
+
+### :bug: Fixes
+
+* **schema:** keep SiteFileUrl parseable on the PHP 8.3 floor ([74ac169](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/74ac169ca6f9d1131fc93abec3b7d4006225a2ae))
+* **schema:** resolve file URLs against the site origin, not the language base ([c84dbb1](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/c84dbb1a7fc5238aaada93b17cf381627aeb890d))
+
+### :zap: Refactor
+
+* **schema:** take the file base from Site::getBase() ([f9e895d](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/f9e895daf64fe36ced51482d54b885cc026b62af))
+
+### :white_check_mark: Tests
+
+* **schema:** cover every branch of SiteFileUrl ([6d454fa](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/6d454fa7c6c147cc20b296d14b4a0f9ba342e736))
+
+### :repeat: Chores
+
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.365-8.5 ([ab011bb](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/ab011bbab676c47d022c026ac6d02d6d65395963))
+* **repo-templates:** sync ([87d92af](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/87d92af137e014b9a2fb4d1ac9f45c83bf4dc495))
+
 ## [2.14.11](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.10...v2.14.11) (2026-11-19)
 
 ### :bug: Fixes
