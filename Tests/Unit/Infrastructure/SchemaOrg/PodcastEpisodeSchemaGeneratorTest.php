@@ -396,6 +396,32 @@ final class PodcastEpisodeSchemaGeneratorTest extends TestCase
         self::assertSame('PodcastEpisode', $document->data['@type']);
     }
 
+    /**
+     * The thumbnail of a video episode is a file, and files are not
+     * language-scoped. On the English page the site base is `/en`; joined with
+     * it, the thumbnail became `/en/fileadmin/...`, a 301, and Google reported
+     * the videos as "thumbnail not reachable".
+     */
+    #[Test]
+    public function aVideoThumbnailOnALanguagePageResolvesAgainstTheSiteRoot(): void
+    {
+        $this->feedWithTheEpisode([
+            'isVideo' => true,
+            'enclosureUrl' => 'https://example.com/media/12.mp4',
+            'enclosureType' => 'video/mp4',
+            'localImage' => 'fileadmin/user_upload/external_image_cache/12.png',
+        ]);
+
+        $document = $this->generator()->generate(
+            $this->page(['_siteBase' => 'https://example.com/en/', '_language' => 'en-GB', 'sys_language_uid' => 1]),
+            $this->podcastElement(),
+        );
+
+        $expected = 'https://example.com/fileadmin/user_upload/external_image_cache/12.png';
+        self::assertSame($expected, $document->data['thumbnailUrl']);
+        self::assertSame($expected, $document->data['associatedMedia']['thumbnailUrl']);
+    }
+
     #[Test]
     public function theEpisodeOutranksTheGenericFallback(): void
     {

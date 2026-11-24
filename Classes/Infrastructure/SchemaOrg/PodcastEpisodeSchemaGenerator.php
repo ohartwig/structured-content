@@ -509,11 +509,7 @@ final class PodcastEpisodeSchemaGenerator implements SchemaGeneratorInterface
      */
     private function absolutize(string $url, string $siteBase): string
     {
-        if ('' === $url || 1 === preg_match('#^https?://#i', $url)) {
-            return $url;
-        }
-
-        return rtrim($siteBase, '/') . '/' . ltrim($url, '/');
+        return SiteFileUrl::resolve($url, $siteBase);
     }
 
     private function formatIso8601Duration(int $seconds): string

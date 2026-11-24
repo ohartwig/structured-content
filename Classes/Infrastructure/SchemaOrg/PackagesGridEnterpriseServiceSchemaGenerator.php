@@ -215,7 +215,7 @@ final class PackagesGridEnterpriseServiceSchemaGenerator implements SchemaGenera
             return $publicUrl;
         }
 
-        return $siteBase . '/' . ltrim($publicUrl, '/');
+        return SiteFileUrl::resolve($publicUrl, $siteBase);
     }
 
     private function buildPageUrl(string $siteBase, string $pageSlug): string

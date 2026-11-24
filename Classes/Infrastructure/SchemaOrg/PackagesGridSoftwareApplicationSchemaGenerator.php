@@ -198,6 +198,6 @@ final class PackagesGridSoftwareApplicationSchemaGenerator implements SchemaGene
             return $publicUrl;
         }
 
-        return rtrim($siteBase, '/') . '/' . ltrim($publicUrl, '/');
+        return SiteFileUrl::resolve($publicUrl, $siteBase);
     }
 }

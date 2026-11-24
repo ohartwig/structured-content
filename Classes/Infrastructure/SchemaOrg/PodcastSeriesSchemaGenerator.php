@@ -278,7 +278,7 @@ final class PodcastSeriesSchemaGenerator implements SchemaGeneratorInterface
             ];
 
             if ('' !== $imageUrl) {
-                $ref['thumbnailUrl'] = $imageUrl;
+                $ref['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, $pageUrl);
             }
 
             $refs[] = $ref;
@@ -382,7 +382,7 @@ final class PodcastSeriesSchemaGenerator implements SchemaGeneratorInterface
                 $imageUrl = $seriesImage;
             }
             if ('' !== $imageUrl) {
-                $item['thumbnailUrl'] = $imageUrl;
+                $item['thumbnailUrl'] = SiteFileUrl::resolve($imageUrl, $siteBase);
             }
 
             $enclosureUrl = (string) ($episode['enclosureUrl'] ?? '');
