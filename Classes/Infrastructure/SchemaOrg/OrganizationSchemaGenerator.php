@@ -44,6 +44,10 @@ final class OrganizationSchemaGenerator implements SchemaGeneratorInterface
         'NZ' => 'New Zealand',
     ];
 
+    public function __construct(
+        private readonly PersonSchemaBuilder $personBuilder,
+    ) {}
+
     /**
      * @param array<string, mixed>       $pageData
      * @param list<array<string, mixed>> $contentElements
@@ -197,10 +201,7 @@ final class OrganizationSchemaGenerator implements SchemaGeneratorInterface
         // Entity-Aufloesung — sie verknuepft Reputation der Person mit der Marke.
         $founderSlug = $this->getSchemaSettingValue($schemaSettings, 'founderPersonSlug');
         if ('' !== $founderSlug && '' !== $entityBase) {
-            $data['founder'] = [
-                '@type' => 'Person',
-                '@id' => $entityBase . PersonSchemaBuilder::AUTHOR_PATH . '/' . ltrim($founderSlug, '/') . '#person',
-            ];
+            $data['founder'] = $this->buildFounder(ltrim($founderSlug, '/'), $entityBase);
         }
 
         $openingHours = $this->getSchemaSettingValue($schemaSettings, 'openingHours');
@@ -232,6 +233,41 @@ final class OrganizationSchemaGenerator implements SchemaGeneratorInterface
     public function getPriority(): int
     {
         return 40;
+    }
+
+    /**
+     * The founder as a full Person node when the slug resolves to a
+     * moselwal_person record, otherwise a bare reference.
+     *
+     * The reference alone dangled on a site without an /autor/<slug> page:
+     * nothing in the graph defined the node it pointed to. The full node keeps
+     * the same @id as the one PersonPageSchemaGenerator emits on the author
+     * page, so both merge into one entity where such a page exists.
+     *
+     * Only `url` differs: buildFromRow() points it at the author page, which
+     * this generator cannot tell exists. The author page's own node carries
+     * that URL; here it gives way to the person's external URL, if any.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildFounder(string $slug, string $entityBase): array
+    {
+        $authorUrl = $entityBase . PersonSchemaBuilder::AUTHOR_PATH . '/' . $slug;
+        $reference = ['@type' => 'Person', '@id' => $authorUrl . '#person'];
+
+        $row = $this->personBuilder->findBySlug($slug);
+        $person = null !== $row ? $this->personBuilder->buildFromRow($row, $entityBase) : null;
+        if (null === $person || ($person['@id'] ?? null) !== $reference['@id']) {
+            return $reference;
+        }
+
+        unset($person['url']);
+        $externalUrl = trim((string) ($row['moselwal_person_url'] ?? ''));
+        if (1 === preg_match('#^https?://#i', $externalUrl)) {
+            $person['url'] = $externalUrl;
+        }
+
+        return $person;
     }
 
     /**

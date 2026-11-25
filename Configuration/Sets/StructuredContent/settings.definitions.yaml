@@ -109,6 +109,20 @@ settings:
     default: ''
     category: structuredContent.schema
 
+  structuredContent.schema.founderPersonSlug:
+    label: 'Founder (Person Slug)'
+    description: 'Slug of the moselwal_person record emitted as Organization.founder (and as author of showcased books). When the slug resolves to a record, the founder carries the full Person data, so the site needs no /autor/<slug> page; otherwise only a reference to /autor/<slug>#person is emitted. Empty = no founder.'
+    type: string
+    default: ''
+    category: structuredContent.schema
+
+  structuredContent.schema.bookShowcases:
+    label: 'Book Showcases (CType:inlineField)'
+    description: 'Content elements whose moselwal_card children are books, as "CType:inlineField" pairs (e.g. "moselwal_bookshowcase:book_showcase_items"). Each card becomes a Schema.org Book: header = name, bodytext2 = subtitle, bodytext = description, image, cta_link = purchase URL, works_for = year and ISBN. Empty = no Book schema.'
+    type: stringlist
+    default: []
+    category: structuredContent.schema
+
   structuredContent.schema.defaultAuthorPersonSlug:
     label: 'Default Author (Person Slug)'
     description: 'Slug of the moselwal_person record used as Article/BlogPosting author when a page has no author record. Empty = founderPersonSlug is used. A free-text page author naming somebody else is kept.'

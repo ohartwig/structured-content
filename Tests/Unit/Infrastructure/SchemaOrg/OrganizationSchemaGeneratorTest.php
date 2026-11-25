@@ -5,17 +5,40 @@ declare(strict_types=1);
 namespace Koh\StructuredContent\Tests\Unit\Infrastructure\SchemaOrg;
 
 use Koh\StructuredContent\Infrastructure\SchemaOrg\OrganizationSchemaGenerator;
+use Koh\StructuredContent\Infrastructure\SchemaOrg\PersonSchemaBuilder;
+use Koh\StructuredContent\Tests\Unit\PodcastFeedDoubles;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class OrganizationSchemaGeneratorTest extends TestCase
 {
+    use PodcastFeedDoubles;
+
     private OrganizationSchemaGenerator $generator;
 
     protected function setUp(): void
     {
-        $this->generator = new OrganizationSchemaGenerator();
+        parent::setUp();
+
+        for ($i = 0; $i < 16; ++$i) {
+            GeneralUtility::addInstance(
+                FrontendRestrictionContainer::class,
+                $this->createStub(FrontendRestrictionContainer::class),
+            );
+        }
+        // No person rows unless a test sets $this->rows: the founder slug
+        // resolves to nothing and only the reference goes out.
+        $this->generator = new OrganizationSchemaGenerator(new PersonSchemaBuilder($this->connectionPool()));
+    }
+
+    protected function tearDown(): void
+    {
+        GeneralUtility::purgeInstances();
+
+        parent::tearDown();
     }
 
     /**
@@ -405,6 +428,60 @@ final class OrganizationSchemaGeneratorTest extends TestCase
             ['@type' => 'Person', '@id' => 'https://ole-hartwig.eu/autor/kai-ole-hartwig#person'],
             $doc->data['founder'],
         );
+    }
+
+    /**
+     * A site without an /autor/<slug> page: the reference alone would point
+     * at a node nobody emits. The founder therefore carries the Person data,
+     * under the @id the author page would use, but without the URL of that
+     * page, which may not exist.
+     */
+    #[Test]
+    public function organizationEmbedsTheFounderPersonWhenTheSlugResolves(): void
+    {
+        $this->rows = [[
+            'uid' => 7,
+            'uid_local' => 0,
+            'moselwal_person_firstname' => 'Ada',
+            'moselwal_person_lastname' => 'Lovelace',
+            'moselwal_person_slug' => 'ada-lovelace',
+            'moselwal_person_job_title' => 'Author',
+            'moselwal_person_url' => 'https://ada.example.net',
+        ]];
+
+        $doc = $this->generator->generate([
+            '_siteBase' => 'https://example.org/en/',
+            '_entityBase' => 'https://example.org/',
+            '_siteSettings' => ['structuredContent' => ['schema' => ['founderPersonSlug' => 'ada-lovelace']]],
+        ], []);
+
+        $founder = $doc->data['founder'];
+        self::assertSame('Person', $founder['@type']);
+        self::assertSame('https://example.org/autor/ada-lovelace#person', $founder['@id']);
+        self::assertSame('Ada Lovelace', $founder['name']);
+        self::assertSame('Author', $founder['jobTitle']);
+        self::assertSame('https://ada.example.net', $founder['url']);
+        self::assertSame(['@id' => 'https://example.org#organization'], $founder['worksFor']);
+    }
+
+    #[Test]
+    public function anEmbeddedFounderWithoutExternalUrlHasNoUrl(): void
+    {
+        $this->rows = [[
+            'uid' => 7,
+            'uid_local' => 0,
+            'moselwal_person_firstname' => 'Ada',
+            'moselwal_person_lastname' => 'Lovelace',
+            'moselwal_person_slug' => 'ada-lovelace',
+        ]];
+
+        $doc = $this->generator->generate([
+            '_siteBase' => 'https://example.org/',
+            '_siteSettings' => ['structuredContent' => ['schema' => ['founderPersonSlug' => 'ada-lovelace']]],
+        ], []);
+
+        self::assertSame('Ada Lovelace', $doc->data['founder']['name']);
+        self::assertArrayNotHasKey('url', $doc->data['founder']);
     }
 
     #[Test]
