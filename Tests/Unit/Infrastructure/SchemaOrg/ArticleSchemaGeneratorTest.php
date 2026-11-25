@@ -293,6 +293,21 @@ final class ArticleSchemaGeneratorTest extends TestCase
     }
 
     /**
+     * List items and paragraphs keep a space between them, and the editor's
+     * CRLF line breaks collapse: a bare strip_tags() ran "Ziel" and "Tools"
+     * together and kept the raw \r\n in the JSON.
+     */
+    #[Test]
+    public function listItemsAndLineBreaksBecomeSingleSpaces(): void
+    {
+        $content = [['CType' => 'text', 'bodytext' => "<p>Eins.</p>\r\n<ul><li>Kopf und Ziel</li><li>Tools im Einklang</li></ul>"]];
+
+        $body = $this->generator()->generate($this->page(), $content)->data['articleBody'] ?? '';
+
+        self::assertSame('Eins. Kopf und Ziel Tools im Einklang', $body);
+    }
+
+    /**
      * Die Sprache wird als BCP47-Angabe ausgegeben — `de` allein sagt nicht,
      * ob es die deutsche oder die oesterreichische Fassung ist.
      */

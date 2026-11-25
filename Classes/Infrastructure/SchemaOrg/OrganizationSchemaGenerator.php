@@ -101,8 +101,12 @@ final class OrganizationSchemaGenerator implements SchemaGeneratorInterface
         }
 
         $logo = $this->getSetting($settings, 'footerLogo');
-        if ('' === $logo && isset($pageData['og_image']) && '' !== $pageData['og_image']) {
-            $logo = (string) $pageData['og_image'];
+        // pages.og_image is a file relation: in a page row it holds the number
+        // of references, not a URL. Only an absolute URL (a caller that already
+        // resolved the image) may stand in for the logo; a count gave the
+        // organization the logo "0".
+        if ('' === $logo && is_string($pageData['og_image'] ?? null) && SchemaValues::isAbsoluteUrl($pageData['og_image'])) {
+            $logo = $pageData['og_image'];
         }
         if ('' !== $logo) {
             // Spec: Organization.logo erwartet entweder URL oder ImageObject.

@@ -126,7 +126,7 @@ final readonly class PageTreeRepository implements PageTreeRepositoryInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function loadVisiblePages(int $rootPageId, int $languageId = 0, int $limit = 0): array
+    public function loadVisiblePages(int $rootPageId, int $languageId = 0, int $limit = 0, bool $includeNavHidden = false): array
     {
         $qb = $this->connectionPool->getQueryBuilderForTable('pages');
         $qb->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
@@ -134,14 +134,18 @@ final readonly class PageTreeRepository implements PageTreeRepositoryInterface
         // `crdate` orders long post lists newest first in the llms.txt — the
         // same key the blog's own feed and ticker sort by. The featured flag
         // is deliberately NOT selected here: see loadFeaturedPageUids().
+        $conditions = [
+            $qb->expr()->in('doktype', $qb->createNamedParameter([1, 2, 4], ArrayParameterType::INTEGER)),
+            $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter(0, ParameterType::INTEGER)),
+        ];
+        if (!$includeNavHidden) {
+            $conditions[] = $qb->expr()->eq('nav_hide', $qb->createNamedParameter(0, ParameterType::INTEGER));
+        }
+
         $query = $qb
             ->select('uid', 'pid', 'title', 'slug', 'description', 'abstract', 'doktype', 'crdate')
             ->from('pages')
-            ->where(
-                $qb->expr()->in('doktype', $qb->createNamedParameter([1, 2, 4], ArrayParameterType::INTEGER)),
-                $qb->expr()->eq('nav_hide', $qb->createNamedParameter(0, ParameterType::INTEGER)),
-                $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter(0, ParameterType::INTEGER)),
-            )
+            ->where(...$conditions)
             ->orderBy('sorting', 'ASC');
 
         if ($limit > 0) {
