@@ -66,7 +66,9 @@ final class ProductSchemaGenerator implements SchemaGeneratorInterface
             'description' => $this->sanitizeText($pageData['description'] ?? $pageData['abstract'] ?? ''),
         ];
 
-        if (isset($pageData['og_image']) && '' !== $pageData['og_image']) {
+        // See OrganizationSchemaGenerator: a page row carries the reference
+        // count here, which is no image.
+        if (is_string($pageData['og_image'] ?? null) && SchemaValues::isAbsoluteUrl($pageData['og_image'])) {
             $data['image'] = $pageData['og_image'];
         }
 

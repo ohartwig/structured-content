@@ -25,4 +25,17 @@ final class SchemaValues
     {
         return null !== $value && '' !== $value && [] !== $value;
     }
+
+    /**
+     * Whether a value can be used as a schema.org URL: an absolute http(s)
+     * address. A file relation of a page row holds the reference count, and a
+     * count must never end up as an image or logo URL.
+     */
+    public static function isAbsoluteUrl(string $value): bool
+    {
+        $scheme = parse_url(trim($value), PHP_URL_SCHEME);
+
+        return in_array($scheme, ['http', 'https'], true)
+            && false !== filter_var(trim($value), FILTER_VALIDATE_URL);
+    }
 }

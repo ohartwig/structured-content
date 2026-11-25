@@ -45,6 +45,8 @@ use Koh\StructuredContent\Domain\Contract\PageTreeRepositoryInterface;
  */
 final readonly class LlmsTxtGeneratorService
 {
+    private const int DOKTYPE_SHORTCUT = 4;
+
     /**
      * Newest pages kept per hub section when the setting is absent. Mirrors
      * the default in settings.definitions.yaml.
@@ -429,6 +431,14 @@ final readonly class LlmsTxtGeneratorService
         $lines[] = '';
         $seenUrls = [];
         foreach ($pages as $page) {
+            // A shortcut page only redirects: its URL answers with a redirect
+            // to another page, so listing it sends a reader through a hop to a
+            // page that is listed in its own right. It still counts for the
+            // grouping (a hub can be a shortcut to its first child), it just
+            // gets no line of its own.
+            if (self::DOKTYPE_SHORTCUT === (int) ($page['doktype'] ?? 0)) {
+                continue;
+            }
             $slug = (string) ($page['slug'] ?? '');
             $url = '' === $slug ? $base . '/' : $base . $slug;
             if (isset($seenUrls[$url])) {

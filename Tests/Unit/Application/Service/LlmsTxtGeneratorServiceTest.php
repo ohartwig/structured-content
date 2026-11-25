@@ -319,6 +319,24 @@ final class LlmsTxtGeneratorServiceTest extends TestCase
 
 
     /**
+     * A shortcut page only redirects. Listing it sends a reader through a hop
+     * to a page that has its own line, so it gets none.
+     */
+    #[Test]
+    public function aShortcutPageGetsNoLineOfItsOwn(): void
+    {
+        $this->pages = [
+            $this->page(['uid' => 11, 'title' => 'Home', 'slug' => '/home', 'doktype' => 4]),
+            $this->page(['uid' => 12, 'title' => 'Kontakt', 'slug' => '/kontakt']),
+        ];
+
+        $output = $this->service()->buildLlmsTxt($this->site());
+
+        self::assertStringNotContainsString('https://example.com/home', $output);
+        self::assertStringContainsString('[Kontakt](https://example.com/kontakt)', $output);
+    }
+
+    /**
      * Eine Seite ohne Slug ist die Startseite und wird als Basis-URL
      * verlinkt. Der Slug der Wurzelseite ist in TYPO3 leer — sie wegzulassen
      * hiesse, die wichtigste Seite der Site nicht zu nennen.

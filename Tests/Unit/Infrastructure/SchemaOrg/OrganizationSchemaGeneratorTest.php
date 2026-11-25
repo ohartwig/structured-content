@@ -120,6 +120,39 @@ final class OrganizationSchemaGeneratorTest extends TestCase
         self::assertSame($doc->data['logo'], $doc->data['image']);
     }
 
+    /**
+     * pages.og_image is a file relation; a page row carries the number of
+     * references there. Without a configured logo that count must not become
+     * the logo: it did, and the organization had the logo "0".
+     */
+    #[Test]
+    public function aReferenceCountInOgImageIsNoLogo(): void
+    {
+        $pageData = $this->examplePageData();
+        $pageData['_siteSettings']['footerLogo'] = '';
+        $pageData['og_image'] = 0;
+
+        $doc = $this->generator->generate($pageData, []);
+
+        self::assertArrayNotHasKey('logo', $doc->data);
+        self::assertArrayNotHasKey('image', $doc->data);
+
+        $pageData['og_image'] = '1';
+        self::assertArrayNotHasKey('logo', $this->generator->generate($pageData, [])->data);
+    }
+
+    #[Test]
+    public function aResolvedOgImageUrlStandsInForAMissingLogo(): void
+    {
+        $pageData = $this->examplePageData();
+        $pageData['_siteSettings']['footerLogo'] = '';
+        $pageData['og_image'] = 'https://example.org/og.png';
+
+        $doc = $this->generator->generate($pageData, []);
+
+        self::assertSame(['@type' => 'ImageObject', 'url' => 'https://example.org/og.png'], $doc->data['logo']);
+    }
+
     #[Test]
     public function emailAndTelephoneAreTopLevelFieldsInAdditionToContactPoint(): void
     {
