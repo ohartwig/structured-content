@@ -114,7 +114,7 @@ final class LanguageNeutralEntityIdsTest extends TestCase
     #[Test]
     public function testOrganizationAndFounderIdsCarryNoLanguagePrefix(): void
     {
-        $document = (new OrganizationSchemaGenerator())->generate($this->englishPage(), []);
+        $document = (new OrganizationSchemaGenerator(new PersonSchemaBuilder($this->connectionPool())))->generate($this->englishPage(), []);
 
         self::assertSame(self::ROOT . '#organization', $document->data['@id']);
         self::assertSame(
