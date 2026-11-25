@@ -154,7 +154,10 @@ final readonly class LlmsTxtGeneratorService
 
         // The curated section comes first: a reader that stops early should
         // have seen the pages the owner considers essential.
-        $this->appendGroup($lines, $base, $featuredGroupLabel, $this->selectFeaturedPages($pages, $pidMap, $featuredLimit));
+        // Flagged pages may be hidden from the menu: an editor who flags one says
+        // it matters, and it is reachable, only not linked from the navigation.
+        $featuredPool = $this->pageTree->loadVisiblePages($rootPageId, $languageId, 0, true);
+        $this->appendGroup($lines, $base, $featuredGroupLabel, $this->selectFeaturedPages($featuredPool, $pidMap, $featuredLimit, $rootPageId));
 
         foreach ($groups['hubs'] as $group) {
             $this->appendGroup(
@@ -243,8 +246,10 @@ final readonly class LlmsTxtGeneratorService
      * at most $limit of them.
      *
      * Only visible pages are candidates — $pages is already filtered — so a
-     * flagged page that is hidden, nav-hidden or outside this site is left
-     * out: listing it would recommend a page nobody can open.
+     * flagged page that is hidden or outside this site is left out: listing
+     * it would recommend a page nobody can open. A page hidden only from the
+     * menu (nav_hide) does count: it opens like any other, and the flag is
+     * the editor saying it matters.
      *
      * Page-tree order means depth-first by `sorting`: `sorting` is only
      * comparable between siblings, so each page is keyed by the sorting
@@ -255,7 +260,7 @@ final readonly class LlmsTxtGeneratorService
      * @param array<int, int> $pidMap
      * @return list<array<string, mixed>>
      */
-    private function selectFeaturedPages(array $pages, array $pidMap, int $limit): array
+    private function selectFeaturedPages(array $pages, array $pidMap, int $limit, int $rootPageId): array
     {
         // Editors tick `tx_structuredcontent_llms_featured` on the
         // default-language page; the uids are default-language uids like the
@@ -263,7 +268,7 @@ final readonly class LlmsTxtGeneratorService
         $flaggedUids = array_flip($this->pageTree->loadFeaturedPageUids());
         $flagged = [];
         foreach ($pages as $row) {
-            if (isset($flaggedUids[(int) $row['uid']])) {
+            if (isset($flaggedUids[(int) $row['uid']]) && self::isBelow((int) $row['uid'], $rootPageId, $pidMap)) {
                 $flagged[(int) $row['uid']] ??= $row;
             }
         }
@@ -706,4 +711,23 @@ final readonly class LlmsTxtGeneratorService
         return implode("\n", $lines);
     }
 
+    /**
+     * Whether a page lies in the tree below $rootPageId (or is the root): the
+     * page rows of every site share one table, and the featured section of one
+     * site must not list a flagged page of another.
+     *
+     * @param array<int, int> $pidMap
+     */
+    private static function isBelow(int $uid, int $rootPageId, array $pidMap): bool
+    {
+        $current = $uid;
+        for ($depth = 0; $depth < 50 && $current > 0; ++$depth) {
+            if ($current === $rootPageId) {
+                return true;
+            }
+            $current = $pidMap[$current] ?? 0;
+        }
+
+        return false;
+    }
 }

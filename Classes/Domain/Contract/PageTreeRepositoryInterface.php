@@ -65,7 +65,12 @@ interface PageTreeRepositoryInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function loadVisiblePages(int $rootPageId, int $languageId = 0, int $limit = 0): array;
+    /*
+     * $includeNavHidden also returns pages hidden from the menu (nav_hide).
+     * They are reachable, only not linked from the navigation; the llms.txt
+     * featured section takes them when an editor flags one explicitly.
+     */
+    public function loadVisiblePages(int $rootPageId, int $languageId = 0, int $limit = 0, bool $includeNavHidden = false): array;
 
     /**
      * Prueft JEDEN Vorfahren gegen die Kriterien oeffentlicher Erreichbarkeit.

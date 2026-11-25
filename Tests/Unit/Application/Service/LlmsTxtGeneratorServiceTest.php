@@ -85,7 +85,12 @@ final class LlmsTxtGeneratorServiceTest extends TestCase
     private function service(): LlmsTxtGeneratorService
     {
         $pageTree = $this->createStub(PageTreeRepositoryInterface::class);
-        $pageTree->method('loadVisiblePages')->willReturnCallback(fn (): array => $this->pages);
+        $pageTree->method('loadVisiblePages')->willReturnCallback(
+            fn (int $root, int $language = 0, int $limit = 0, bool $includeNavHidden = false): array => array_values(array_filter(
+                $this->pages,
+                static fn (array $page): bool => $includeNavHidden || 0 === (int) ($page['nav_hide'] ?? 0),
+            )),
+        );
         $pageTree->method('loadPidMap')->willReturnCallback(
             fn (): array => array_column([...$this->pages, ...$this->invisiblePages], 'pid', 'uid'),
         );
@@ -720,6 +725,48 @@ final class LlmsTxtGeneratorServiceTest extends TestCase
 
         self::assertStringContainsString("## Empfohlene Seiten\n\n- [Leistungen]", $output);
         self::assertStringNotContainsString('Entwurf', $output);
+    }
+
+    /**
+     * A page hidden only from the menu is reachable. Flagged, it belongs in
+     * the featured section; unflagged it stays out of the file as before.
+     */
+    #[Test]
+    public function aFlaggedPageHiddenFromTheMenuIsFeatured(): void
+    {
+        $this->pages = [
+            $this->page(),
+            $this->page(['uid' => 12, 'title' => 'INQA-Coaching', 'slug' => '/inqa', 'nav_hide' => 1, 'tx_structuredcontent_llms_featured' => 1]),
+            $this->page(['uid' => 13, 'title' => 'Versteckt', 'slug' => '/versteckt', 'nav_hide' => 1]),
+        ];
+
+        $output = $this->service()->buildLlmsTxt($this->site());
+
+        self::assertStringContainsString("## Empfohlene Seiten\n\n- [INQA-Coaching](https://example.com/inqa)", $output);
+        self::assertSame(1, substr_count($output, 'https://example.com/inqa'));
+        self::assertStringNotContainsString('Versteckt', $output);
+    }
+
+    /**
+     * A flagged page of another site sits in the same table. It must not
+     * show up in this site's featured section.
+     */
+    #[Test]
+    public function aFlaggedPageOfAnotherSiteIsNotFeatured(): void
+    {
+        $this->pages = [
+            $this->page(['tx_structuredcontent_llms_featured' => 1]),
+            $this->page(['uid' => 50, 'pid' => 0, 'title' => 'Andere Site', 'slug' => '/', 'tx_structuredcontent_llms_featured' => 0]),
+            $this->page(['uid' => 51, 'pid' => 50, 'title' => 'Fremd', 'slug' => '/fremd', 'tx_structuredcontent_llms_featured' => 1]),
+        ];
+
+        $output = $this->service()->buildLlmsTxt($this->site());
+        $start = strpos($output, '## Empfohlene Seiten');
+        self::assertIsInt($start);
+        $end = strpos($output, "\n## ", $start + 1);
+        $featured = substr($output, $start, false === $end ? null : $end - $start);
+
+        self::assertStringNotContainsString('Fremd', $featured);
     }
 
     /**
