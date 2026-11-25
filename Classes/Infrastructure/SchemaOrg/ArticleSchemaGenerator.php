@@ -71,7 +71,13 @@ final class ArticleSchemaGenerator implements SchemaGeneratorInterface
                     continue;
                 }
                 if ('bodytext' === $field) {
-                    $bodyParts[] = trim(strip_tags($raw));
+                    // sanitizeText, not a bare strip_tags: list items and
+                    // paragraphs get a space between them ("Ziel" + "Tools"
+                    // ran together) and the editor's CRLF line breaks collapse.
+                    $text = $this->sanitizeText($raw);
+                    if ('' !== $text) {
+                        $bodyParts[] = $text;
+                    }
                 }
                 $totalWords += self::countWords($raw);
             }
