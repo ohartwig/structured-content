@@ -3,6 +3,19 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.15.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.15.0...v2.15.1) (2026-11-25)
+
+### :sparkles: Features
+
+* **schema:** founder person on sites without an author page, books as Book ([fcc51c3](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/fcc51c3235ceb7c37d14b8c747b8adb6ef589fd8))
+
+### :bug: Fixes
+
+* **schema:** neutral names in the book showcase example and its test ([393b8c6](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/393b8c6e7ae1f5d5224073e5263c51aeca990f43))
+* **schema:** plain articleBody with spaces between list items ([d01f9b0](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/d01f9b06ba98fa907e9cf7cc934c0a0dda7c5dee))
+* **llms:** feature flagged pages that are hidden only from the menu ([351075c](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/351075ccc61f008c1b8bf421956ebf9d9c50a910))
+* **schema:** no reference count as logo, no shortcut pages in llms.txt ([59fccc7](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/59fccc73ef8ee26ceb1ce684bd1bd293eb68fb3e))
+
 ## [2.15.0](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.14.12...v2.15.0) (2026-11-25)
 
 ### :sparkles: Features
