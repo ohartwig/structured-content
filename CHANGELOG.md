@@ -3,6 +3,21 @@
 This package continues `moselwal/structured-content` (last release 2.13.4) as
 `koh/structured-content` with a fresh history. Releases from 2.14.0 on are listed here.
 
+## [2.15.2](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.15.1...v2.15.2) (2026-11-27)
+
+### :bug: Fixes
+
+* **schema:** date pages by the date they are presented with ([9de3ecb](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/9de3ecb8eeb46ad6e3d49da939045b2aaf624819))
+* **schema:** translated, illustrated author pages with one page entity ([761625d](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/761625d2869b620a8cf13230c56ebb2fe954356e))
+
+### :memo: Documentation
+
+* single blank line before the page dates section ([4422fa3](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/4422fa3bc63eb06aaf2789775b501c704ce3a40a))
+
+### :white_check_mark: Tests
+
+* **schema:** cover the author page fixes against mutation testing ([b18c01c](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/commit/b18c01c8b1903559a9208637c12b88aa35aa2d37))
+
 ## [2.15.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/structured-content/compare/v2.15.0...v2.15.1) (2026-11-25)
 
 ### :sparkles: Features
