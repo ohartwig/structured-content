@@ -55,7 +55,13 @@ final readonly class DoctrineAuthoredPagesRepository implements AuthoredPagesRep
                     ),
                 ),
             )
-            ->orderBy('tstamp', 'DESC')
+            // Newest publication first: crdate is the date the BlogPosting
+            // node gives as datePublished. tstamp listed the most recently
+            // edited pages instead, so fixing a typo in an old post moved it
+            // to the top. The uid keeps posts of the same second in a stable
+            // order.
+            ->orderBy('crdate', 'DESC')
+            ->addOrderBy('uid', 'DESC')
             ->setMaxResults($limit)
             ->executeQuery()
             ->fetchAllAssociative();

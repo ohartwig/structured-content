@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Koh\StructuredContent\Application\Service;
 
+use Koh\StructuredContent\Domain\Contract\ClaimsPageEntityInterface;
+use Koh\StructuredContent\Domain\Contract\PageEntityGeneratorInterface;
 use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
 
@@ -37,6 +39,16 @@ final class SchemaOrgService
     }
 
     /**
+     * Runs every generator that handles the page, in priority order; the
+     * first document of a schema type wins.
+     *
+     * When a generator claims the page entity of the URL
+     * (ClaimsPageEntityInterface) and produces data, the documents of the
+     * generic page-entity generators (PageEntityGeneratorInterface: WebPage,
+     * Article) are dropped — one URL, one page entity. Those that come after
+     * the claim are not run at all; the claim also holds against one with a
+     * higher priority.
+     *
      * @param array<string, mixed>       $pageData
      * @param list<array<string, mixed>> $contentElements
      *
@@ -45,15 +57,35 @@ final class SchemaOrgService
     public function generateAll(array $pageData, array $contentElements): array
     {
         $this->failures = [];
-        $documents = [];
-        $seenTypes = [];
+        /** @var list<array{document: JsonLdDocument, yields: bool}> $results */
+        $results = [];
+        $pageEntityClaimed = false;
 
         foreach ($this->sortedGenerators as $generator) {
-            $document = $this->run($generator, $pageData, $contentElements);
-            if (null !== $document && !isset($seenTypes[$document->schemaType])) {
-                $seenTypes[$document->schemaType] = true;
-                $documents[] = $document;
+            $yields = $generator instanceof PageEntityGeneratorInterface;
+            if ($yields && $pageEntityClaimed) {
+                continue;
             }
+            $document = $this->run($generator, $pageData, $contentElements);
+            if (null === $document) {
+                continue;
+            }
+            if ($generator instanceof ClaimsPageEntityInterface && [] !== $document->data) {
+                $pageEntityClaimed = true;
+            }
+            $results[] = ['document' => $document, 'yields' => $yields];
+        }
+
+        // Dropped documents take no part in the type check: a ProfilePage
+        // claim must not make a dropped node shadow a later one of its type.
+        $documents = [];
+        $seenTypes = [];
+        foreach ($results as ['document' => $document, 'yields' => $yields]) {
+            if (($pageEntityClaimed && $yields) || isset($seenTypes[$document->schemaType])) {
+                continue;
+            }
+            $seenTypes[$document->schemaType] = true;
+            $documents[] = $document;
         }
 
         return $documents;

@@ -10,13 +10,13 @@ use Koh\StructuredContent\Application\Service\SchemaTypeResolverService;
 use Koh\StructuredContent\Domain\Contract\CategoryRepositoryInterface;
 use Koh\StructuredContent\Domain\Contract\ContextResolverInterface;
 use Koh\StructuredContent\Domain\Contract\RelationshipRepositoryInterface;
-use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
+use Koh\StructuredContent\Domain\Contract\PageEntityGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-final class ArticleSchemaGenerator implements SchemaGeneratorInterface
+final class ArticleSchemaGenerator implements PageEntityGeneratorInterface
 {
     use SanitizesSchemaTrait;
     use ContextAndRelationshipsTrait;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Koh\StructuredContent\Tests\Unit\Infrastructure\SchemaOrg;
 
 use Koh\StructuredContent\Domain\Contract\AuthoredPagesRepositoryInterface;
+use Koh\StructuredContent\Domain\Contract\ClaimsPageEntityInterface;
 use Koh\StructuredContent\Infrastructure\SchemaOrg\PersonSchemaBuilder;
 use Koh\StructuredContent\Infrastructure\SchemaOrg\ProfilePageSchemaGenerator;
 use Koh\StructuredContent\Infrastructure\SchemaOrg\SoftwareApplicationSchemaGenerator;
@@ -239,7 +240,7 @@ final class SoftwareAndProfilePageSchemaGeneratorTest extends TestCase
             'uid' => 50,
             '_rootPageId' => 1,
             'title' => 'Ada Lovelace',
-            'slug' => '/autor/ada-lovelace',
+            'slug' => '/autor',
             '_siteBase' => 'https://example.com/',
             'sys_language_uid' => 0,
             '_routingArguments' => ['tx_contentblockscollection_person' => ['person' => 'ada-lovelace']],
@@ -324,5 +325,107 @@ final class SoftwareAndProfilePageSchemaGeneratorTest extends TestCase
         $document = $this->profile()->generate($this->authorPage(), []);
 
         self::assertSame([], $document->data);
+    }
+
+    /**
+     * The English author page as the middleware hands it over: the language
+     * base, the site's entity base and the URL the router built.
+     *
+     * @param array<string, mixed> $overrides
+     *
+     * @return array<string, mixed>
+     */
+    private function englishAuthorPage(array $overrides = []): array
+    {
+        return [
+            ...$this->authorPage(),
+            'slug' => '/author',
+            'sys_language_uid' => 1,
+            '_siteBase' => 'https://example.com/en/',
+            '_entityBase' => 'https://example.com/',
+            '_language' => 'en-GB',
+            '_routeUrl' => 'https://example.com/en/author/ada-lovelace',
+            ...$overrides,
+        ];
+    }
+
+    /**
+     * The ProfilePage is the page being rendered: on the English page its
+     * URL is the English author URL the router built. Appending the
+     * identifier path to the language base gave `/en/autor/<slug>`, a 404.
+     */
+    #[Test]
+    public function theProfilePageUrlIsTheRoutedUrlOfTheRenderedLanguage(): void
+    {
+        $this->rows = [$this->personRow()];
+
+        $document = $this->profile()->generate($this->englishAuthorPage(), []);
+
+        self::assertSame('https://example.com/en/author/ada-lovelace', $document->data['url']);
+        self::assertSame('https://example.com/en/author/ada-lovelace#webpage', $document->data['@id']);
+    }
+
+    /**
+     * The Person stays one entity per site: its @id is the same on the
+     * English profile page as everywhere else, only the page's own URL
+     * follows the language.
+     */
+    #[Test]
+    public function thePersonIdStaysLanguageIndependentOnATranslatedProfilePage(): void
+    {
+        $this->rows = [$this->personRow()];
+
+        $document = $this->profile()->generate($this->englishAuthorPage(), []);
+
+        self::assertSame(['@id' => 'https://example.com/autor/ada-lovelace#person'], $document->data['mainEntity']);
+    }
+
+    /**
+     * Without a routed URL (a caller outside the middleware) the page's own
+     * slug in its language stands in, followed by the person's slug.
+     */
+    #[Test]
+    public function withoutARoutedUrlThePageSlugOfTheLanguageStandsIn(): void
+    {
+        $this->rows = [$this->personRow()];
+
+        $document = $this->profile()->generate($this->englishAuthorPage(['_routeUrl' => '']), []);
+
+        self::assertSame('https://example.com/en/author/ada-lovelace', $document->data['url']);
+    }
+
+    /**
+     * An article in hasPart carries the date it was published (crdate, as
+     * its own BlogPosting node) and the date it was last updated — not the
+     * date of its last edit as its publication date.
+     */
+    #[Test]
+    public function anArticleCarriesItsPublicationDateAndItsLastUpdate(): void
+    {
+        $this->rows = [$this->personRow()];
+        $published = 1_700_000_000;
+        $edited = 1_760_000_000;
+        $updated = 1_750_000_000;
+        $this->articles = [
+            ['uid' => 100, 'title' => 'Updated post', 'slug' => '/blog/a', 'crdate' => $published, 'tstamp' => $edited, 'lastUpdated' => $updated],
+            ['uid' => 101, 'title' => 'Edited post', 'slug' => '/blog/b', 'crdate' => $published, 'tstamp' => $edited, 'lastUpdated' => 0],
+        ];
+
+        $hasPart = $this->profile()->generate($this->authorPage(), [])->data['hasPart'];
+
+        self::assertSame(date('c', $published), $hasPart[0]['datePublished']);
+        self::assertSame(date('c', $updated), $hasPart[0]['dateModified']);
+        self::assertSame(date('c', $published), $hasPart[1]['datePublished']);
+        self::assertSame(date('c', $edited), $hasPart[1]['dateModified'], 'without a last-updated date the tstamp stands in');
+    }
+
+    /**
+     * The ProfilePage claims the page entity of its URL, so the service
+     * drops the container page's WebPage and Article next to it.
+     */
+    #[Test]
+    public function theProfilePageClaimsThePageEntity(): void
+    {
+        self::assertInstanceOf(ClaimsPageEntityInterface::class, $this->profile());
     }
 }

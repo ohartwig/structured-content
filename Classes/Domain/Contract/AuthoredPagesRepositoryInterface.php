@@ -12,6 +12,8 @@ namespace Koh\StructuredContent\Domain\Contract;
 interface AuthoredPagesRepositoryInterface
 {
     /**
+     * The pages in the given language, newest publication (crdate) first.
+     *
      * @return list<array<string, mixed>>
      */
     public function findByAuthorUid(int $personUid, int $languageId = 0, int $limit = 50): array;

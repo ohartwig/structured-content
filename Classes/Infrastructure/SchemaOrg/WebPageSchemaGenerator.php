@@ -7,10 +7,10 @@ namespace Koh\StructuredContent\Infrastructure\SchemaOrg;
 use Koh\StructuredContent\Application\Service\SchemaTypeResolverService;
 use Koh\StructuredContent\Domain\Contract\ContextResolverInterface;
 use Koh\StructuredContent\Domain\Contract\RelationshipRepositoryInterface;
-use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
+use Koh\StructuredContent\Domain\Contract\PageEntityGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
 
-final class WebPageSchemaGenerator implements SchemaGeneratorInterface
+final class WebPageSchemaGenerator implements PageEntityGeneratorInterface
 {
     use SanitizesSchemaTrait;
     use ContextAndRelationshipsTrait;

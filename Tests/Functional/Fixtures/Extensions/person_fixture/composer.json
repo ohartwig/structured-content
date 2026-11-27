@@ -1,0 +1,14 @@
+{
+    "name": "koh/structured-content-person-fixture",
+    "description": "Test fixture: a translatable person table with a portrait field, shaped like the Content Blocks record type.",
+    "type": "typo3-cms-extension",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "typo3/cms-core": "^14.0"
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "person_fixture"
+        }
+    }
+}
