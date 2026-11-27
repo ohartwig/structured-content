@@ -428,4 +428,86 @@ final class SoftwareAndProfilePageSchemaGeneratorTest extends TestCase
     {
         self::assertInstanceOf(ClaimsPageEntityInterface::class, $this->profile());
     }
+
+    /**
+     * Dates come from the database as strings (MariaDB) or are missing or
+     * zero: a missing date is left out rather than written as 1970.
+     */
+    #[Test]
+    public function articleDatesAreReadAsNumbersAndOnlyWhenSet(): void
+    {
+        $this->rows = [$this->personRow()];
+        $this->articles = [
+            ['uid' => 100, 'title' => 'String dates', 'slug' => '/blog/a', 'crdate' => '1700000000', 'tstamp' => '1760000000', 'lastUpdated' => '1750000000'],
+            ['uid' => 101, 'title' => 'Zero dates', 'slug' => '/blog/b', 'crdate' => 0, 'tstamp' => 0, 'lastUpdated' => 0],
+            ['uid' => 102, 'title' => 'No dates', 'slug' => '/blog/c'],
+            ['uid' => 103, 'title' => 'Only tstamp', 'slug' => '/blog/d', 'tstamp' => '1760000000'],
+        ];
+
+        $hasPart = $this->profile()->generate($this->authorPage(), [])->data['hasPart'];
+
+        self::assertSame(date('c', 1_700_000_000), $hasPart[0]['datePublished']);
+        self::assertSame(date('c', 1_750_000_000), $hasPart[0]['dateModified']);
+        self::assertArrayNotHasKey('datePublished', $hasPart[1]);
+        self::assertArrayNotHasKey('dateModified', $hasPart[1]);
+        self::assertArrayNotHasKey('datePublished', $hasPart[2]);
+        self::assertArrayNotHasKey('dateModified', $hasPart[2]);
+        self::assertSame(date('c', 1_760_000_000), $hasPart[3]['dateModified']);
+    }
+
+    /**
+     * Only an absolute routed URL is taken (trimmed, any case); anything
+     * else falls back to the page slug. The page slug's trailing slash does
+     * not double up.
+     */
+    #[Test]
+    public function onlyAnAbsoluteRoutedUrlIsTaken(): void
+    {
+        $this->rows = [$this->personRow()];
+        $fallback = 'https://example.com/en/author/ada-lovelace';
+        $cases = [
+            '  https://example.com/en/author/ada-lovelace  ' => 'https://example.com/en/author/ada-lovelace',
+            'HTTPS://example.com/en/author/ada-lovelace' => 'HTTPS://example.com/en/author/ada-lovelace',
+            '/en/author/ada-lovelace' => $fallback,
+            'see https://example.com/elsewhere' => $fallback,
+        ];
+        foreach ($cases as $routeUrl => $expected) {
+            $this->rows = [$this->personRow()];
+            $document = $this->profile()->generate($this->englishAuthorPage(['_routeUrl' => $routeUrl, 'slug' => '/author/']), []);
+            self::assertSame($expected, $document->data['url'] ?? null, $routeUrl);
+        }
+
+        $this->rows = [$this->personRow()];
+        $page = $this->englishAuthorPage();
+        unset($page['_routeUrl']);
+        self::assertSame($fallback, $this->profile()->generate($page, [])->data['url'] ?? null);
+    }
+
+    /**
+     * Without a site base there is no URL to build, and the ProfilePage
+     * carries neither `url` nor `@id`.
+     */
+    #[Test]
+    public function withoutASiteBaseThereIsNoProfileUrl(): void
+    {
+        $this->rows = [$this->personRow()];
+
+        $data = $this->profile()->generate($this->englishAuthorPage(['_routeUrl' => '', '_siteBase' => '']), [])->data;
+
+        self::assertArrayNotHasKey('url', $data);
+        self::assertArrayNotHasKey('@id', $data);
+    }
+
+    /**
+     * On the site root the author page URL is the person slug below the base.
+     */
+    #[Test]
+    public function anAuthorPageOnTheRootHasNoDoubleSlash(): void
+    {
+        $this->rows = [$this->personRow()];
+
+        $data = $this->profile()->generate($this->englishAuthorPage(['_routeUrl' => '', 'slug' => '/']), [])->data;
+
+        self::assertSame('https://example.com/en/ada-lovelace', $data['url'] ?? null);
+    }
 }

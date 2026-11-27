@@ -81,10 +81,10 @@ final class SchemaOrgService
         $documents = [];
         $seenTypes = [];
         foreach ($results as ['document' => $document, 'yields' => $yields]) {
-            if (($pageEntityClaimed && $yields) || isset($seenTypes[$document->schemaType])) {
+            if (($pageEntityClaimed && $yields) || in_array($document->schemaType, $seenTypes, true)) {
                 continue;
             }
-            $seenTypes[$document->schemaType] = true;
+            $seenTypes[] = $document->schemaType;
             $documents[] = $document;
         }
 

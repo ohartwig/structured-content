@@ -111,12 +111,16 @@ final class PersonSchemaBuilderTest extends TestCase
      * The person table as Content Blocks registers it: every field carries
      * the table prefix, the portrait is `moselwal_person_image`.
      */
-    private static function registerPersonTca(string $imageField = 'moselwal_person_image'): void
+    /**
+     * @param array<string, array<string, mixed>> $extraColumns
+     */
+    private static function registerPersonTca(string $imageField = 'moselwal_person_image', array $extraColumns = []): void
     {
         $GLOBALS['TCA']['moselwal_person'] = [
             'ctrl' => [],
             'columns' => [
                 'moselwal_person_firstname' => ['config' => ['type' => 'input']],
+                ...$extraColumns,
                 $imageField => ['config' => ['type' => 'file', 'allowed' => 'common-image-types']],
                 'moselwal_person_job_title' => ['config' => ['type' => 'input']],
             ],
@@ -493,5 +497,111 @@ final class PersonSchemaBuilderTest extends TestCase
             ->buildFromRow($this->row(), 'https://example.com/');
 
         self::assertArrayNotHasKey('image', $person ?? []);
+    }
+
+    /**
+     * Only file fields named after the portrait count: a text field called
+     * `*_image`, a file field with another name, or an inline relation to
+     * some other table is not the portrait. An inline relation to file
+     * references (the pre-`file` TCA style) is.
+     */
+    #[Test]
+    public function onlyFileFieldsNamedImageAreThePortrait(): void
+    {
+        self::registerPersonTca('moselwal_person_image', [
+            'moselwal_person_alt_image' => ['config' => ['type' => 'input']],
+            'moselwal_person_backgroundimage' => ['config' => ['type' => 'file']],
+            'moselwal_person_cv' => ['config' => ['type' => 'file']],
+            'moselwal_person_badge_image' => ['config' => ['type' => 'inline', 'foreign_table' => 'tx_badge']],
+            'moselwal_person_legacy_image' => ['config' => ['type' => 'inline', 'foreign_table' => 'sys_file_reference']],
+            'image_gallery' => ['config' => ['type' => 'file']],
+            'moselwal_person_broken_image' => 'not an array',
+        ]);
+        $lookups = [];
+
+        $this->builder($this->fileRepository('none', '/x.jpg', $lookups))->buildFromRow($this->row(), 'https://example.com/');
+
+        self::assertSame(
+            [['moselwal_person', 'moselwal_person_legacy_image', 7], ['moselwal_person', 'moselwal_person_image', 7]],
+            $lookups,
+        );
+    }
+
+    /**
+     * A reference without a public URL is skipped for the next one; the URL
+     * is trimmed, and a protocol-relative or upper-case scheme counts as
+     * absolute.
+     */
+    #[Test]
+    public function thePublicUrlIsNormalised(): void
+    {
+        self::registerPersonTca();
+        $cases = [
+            '  /fileadmin/team/ada.jpg  ' => 'https://example.com/fileadmin/team/ada.jpg',
+            '//cdn.example.net/ada.jpg' => 'https://cdn.example.net/ada.jpg',
+            'HTTPS://cdn.example.net/ada.jpg' => 'HTTPS://cdn.example.net/ada.jpg',
+            'cdn/https://ada.jpg' => 'https://example.com/cdn/https://ada.jpg',
+        ];
+        foreach ($cases as $publicUrl => $expected) {
+            $person = $this->builder($this->fileRepository('moselwal_person_image', $publicUrl))
+                ->buildFromRow($this->row(), 'https://example.com/de/');
+            self::assertSame($expected, $person['image'] ?? null, $publicUrl);
+        }
+    }
+
+    #[Test]
+    public function aReferenceWithoutAPublicUrlIsSkipped(): void
+    {
+        self::registerPersonTca();
+        $empty = $this->createStub(FileReference::class);
+        $empty->method('getPublicUrl')->willReturn('');
+        $files = $this->createStub(FileRepository::class);
+        $files->method('findByRelation')->willReturnCallback(
+            fn (string $table, string $field, int $uid): array => 8 === $uid ? [$empty] : $this->fileRepository('moselwal_person_image', '/fileadmin/ada.jpg')->findByRelation($table, $field, $uid),
+        );
+
+        $person = $this->builder($files)->buildFromRow($this->row(['_LOCALIZED_UID' => 8]), 'https://example.com/');
+
+        self::assertSame('https://example.com/fileadmin/ada.jpg', $person['image'] ?? null);
+    }
+
+    /**
+     * Uids come from database rows as strings; one record is looked up once.
+     */
+    #[Test]
+    public function eachRecordIsLookedUpOnce(): void
+    {
+        self::registerPersonTca();
+        $lookups = [];
+
+        $this->builder($this->fileRepository('none', '/x.jpg', $lookups))
+            ->buildFromRow($this->row(['uid' => '7', '_LOCALIZED_UID' => '7']), 'https://example.com/');
+
+        self::assertSame([['moselwal_person', 'moselwal_person_image', 7]], $lookups);
+    }
+
+    #[Test]
+    public function aFailingFileRepositoryCostsOnlyTheImage(): void
+    {
+        self::registerPersonTca();
+        $files = $this->createStub(FileRepository::class);
+        $files->method('findByRelation')->willThrowException(new \RuntimeException('storage offline'));
+
+        $person = $this->builder($files)->buildFromRow($this->row(), 'https://example.com/');
+
+        self::assertSame('Ada Lovelace', $person['name'] ?? null);
+        self::assertArrayNotHasKey('image', $person ?? []);
+    }
+
+    #[Test]
+    public function aRecordWithoutUidHasNoImage(): void
+    {
+        self::registerPersonTca();
+        $lookups = [];
+
+        $this->builder($this->fileRepository('moselwal_person_image', '/x.jpg', $lookups))
+            ->buildFromRow($this->row(['uid' => 0]), 'https://example.com/');
+
+        self::assertSame([], $lookups);
     }
 }
