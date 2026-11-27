@@ -7,6 +7,7 @@ namespace Koh\StructuredContent\Infrastructure\SchemaOrg;
 use Koh\StructuredContent\Application\Service\SchemaTypeResolverService;
 use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
+use Koh\StructuredContent\Domain\Model\PageDates;
 
 /**
  * Fuzzy auto-detection of Schema.org types based on CType patterns,
@@ -142,12 +143,8 @@ final class AutoDetectSchemaGenerator implements SchemaGeneratorInterface
         }
 
         // Add timestamps
-        if (isset($pageData['crdate']) && (int) $pageData['crdate'] > 0) {
-            $data['datePublished'] = date('c', (int) $pageData['crdate']);
-        }
-        if (isset($pageData['tstamp']) && (int) $pageData['tstamp'] > 0) {
-            $data['dateModified'] = date('c', (int) $pageData['tstamp']);
-        }
+        // The dates the page is presented with, see PageDates.
+        $data = [...$data, ...PageDates::fromPage($pageData)->toSchemaProperties()];
 
         return new JsonLdDocument($schemaType, array_filter($data, SchemaValues::present(...)));
     }

@@ -12,7 +12,8 @@ namespace Koh\StructuredContent\Domain\Contract;
 interface AuthoredPagesRepositoryInterface
 {
     /**
-     * The pages in the given language, newest publication (crdate) first.
+     * The pages in the given language, newest publication first (see
+     * PageDates::newestFirst()).
      *
      * @return list<array<string, mixed>>
      */

@@ -27,4 +27,16 @@ final class FreshnessSignalEnricherTest extends TestCase
         self::assertNull($signal->datePublished);
         self::assertNull($signal->dateModified);
     }
+
+    /**
+     * The fallback dates agree with the dates the generators emit (PageDates).
+     */
+    #[Test]
+    public function theFallbackUsesThePageDatesOfTheGenerators(): void
+    {
+        $signal = (new FreshnessSignalEnricher())->enrich(['crdate' => 1_700_000_000, 'starttime' => 1_720_000_000, 'tstamp' => 1_700_000_000]);
+
+        self::assertSame(1_720_000_000, $signal->datePublished?->getTimestamp());
+        self::assertSame(1_720_000_000, $signal->dateModified?->getTimestamp());
+    }
 }

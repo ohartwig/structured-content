@@ -1,13 +1,14 @@
 "pages"
-,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent","deleted","hidden","crdate","tstamp","lastUpdated","tx_structuredcontent_author_records","tx_structuredcontent_schema_type"
-,1,0,"Root","/",1,0,0,0,0,1600000000,1600000000,0,"",""
-,2,1,"Autor","/autor",1,0,0,0,0,1600000000,1600000000,0,"","BlogPosting"
-,3,1,"Author","/author",1,1,2,0,0,1600000000,1600000000,0,"","BlogPosting"
-,5,1,"Personen","/personen",254,0,0,0,0,1600000000,1600000000,0,"",""
-,20,1,"Oldest post, edited last","/blog/oldest",1,0,0,0,0,1700000000,1790000000,0,"7",""
-,21,1,"Newest post","/blog/newest",1,0,0,0,0,1720000000,1720000000,0,"7",""
-,22,1,"Middle post","/blog/middle",1,0,0,0,0,1710000000,1710000000,1715000000,"9,7",""
-,23,1,"Post by somebody else","/blog/other",1,0,0,0,0,1730000000,1730000000,0,"9",""
+,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent","deleted","hidden","crdate","tstamp","lastUpdated","starttime","tx_structuredcontent_author_records","tx_structuredcontent_schema_type"
+,1,0,Root,/,1,0,0,0,0,1600000000,1600000000,0,0,,
+,2,1,Autor,/autor,1,0,0,0,0,1600000000,1600000000,0,0,,BlogPosting
+,3,1,Author,/author,1,1,2,0,0,1600000000,1600000000,0,0,,BlogPosting
+,5,1,Personen,/personen,254,0,0,0,0,1600000000,1600000000,0,0,,
+,20,1,"Oldest post, edited last",/blog/oldest,1,0,0,0,0,1700000000,1790000000,0,0,7,
+,21,1,Newest post,/blog/newest,1,0,0,0,0,1720000000,1720000000,0,0,7,
+,22,1,Middle post,/blog/middle,1,0,0,0,0,1710000000,1710000000,1715000000,0,"9,7",
+,24,1,"Written first, released last",/blog/scheduled,1,0,0,0,0,1690000000,1690000000,0,1725000000,7,
+,23,1,Post by somebody else,/blog/other,1,0,0,0,0,1730000000,1730000000,0,0,9,
 "moselwal_person"
 ,"uid","pid","sys_language_uid","l10n_parent","deleted","hidden","moselwal_person_firstname","moselwal_person_lastname","moselwal_person_slug","moselwal_person_job_title","moselwal_person_bio","moselwal_person_image"
 ,7,5,0,0,0,0,"Ada","Lovelace","ada-lovelace","Mathematikerin","Schrieb das erste Programm.",1

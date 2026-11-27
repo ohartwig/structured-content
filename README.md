@@ -47,7 +47,7 @@ rendered by `priority` (higher = earlier in the JSON-LD block).
 | `DefinedTermSchemaGenerator` | 85 | `DefinedTerm` | `/glossar/{slug}` — dpn-glossary detail page (conditional on `isLoaded('dpn_glossary')`); output contains `alternateName` from synonyms |
 | `PersonPageSchemaGenerator` | 80 | `Person` (standalone) | `/autor/{slug}` — emits the full Person entity with `@id` for cross-page references |
 | `DefinedTermSetSchemaGenerator` | 78 | `DefinedTermSet` | Glossary listing page (`uid == dpnGlossary.settings.detailPage`); `hasDefinedTerm[]` as `@id` references |
-| `ProfilePageSchemaGenerator` | 75 | `ProfilePage` + `mainEntity.@id` + `hasPart` | `/autor/{slug}` — wrapper page with an `@id` reference to the Person (not inline). `url`/`@id` are the author page URL in the rendered language as the site router builds it (`/en/author/{slug}`); `hasPart` lists the newest articles by `crdate` (`datePublished`), `dateModified` from `lastUpdated`, else `tstamp`. Claims the page entity: the WebPage and Article nodes of the same URL are dropped |
+| `ProfilePageSchemaGenerator` | 75 | `ProfilePage` + `mainEntity.@id` + `hasPart` | `/autor/{slug}` — wrapper page with an `@id` reference to the Person (not inline). `url`/`@id` are the author page URL in the rendered language as the site router builds it (`/en/author/{slug}`); `hasPart` lists the newest articles by publication date with the dates of their BlogPosting nodes (see *Page dates*). Claims the page entity: the WebPage and Article nodes of the same URL are dropped |
 | `ReviewSchemaGenerator` | 68 | `Review` | Pages with the testimonials content block |
 | `PodcastEpisodeSchemaGenerator` | 65 | `PodcastEpisode` | Podcast plugin detail view (with `actor[]` as `@id` references for hosts and guests) |
 | `PodcastSeriesSchemaGenerator` | 60 | `PodcastSeries` | Podcast plugin list view |
@@ -78,6 +78,16 @@ rendered by `priority` (higher = earlier in the JSON-LD block).
 | `Infrastructure/SchemaOrg/PodcastFeedCacheReaderTrait` | Reads cached feed items for podcast schemas without a re-fetch. Cache key `rssfeed_<sha256(feedUrl)>` (in sync with `PodcastFeedService::cacheIdentifierFor()` — previously md5, fixed in v2.0.3). |
 | `Infrastructure/SchemaOrg/SanitizesSchemaTrait` | Strip filter for empty or non-JSON-conformant values |
 | `Infrastructure/SchemaOrg/ContextAndRelationshipsTrait` | Appends AI context + relationships to the schema output |
+
+
+### Page dates
+
+Every generator that dates the page itself (Article/BlogPosting, WebPage, SoftwareApplication, the auto-detected types, the ProfilePage's `hasPart` and the middleware fallback) uses `Domain/Model/PageDates`:
+
+- `datePublished` — the date the page is presented with: `lastUpdated` if set, else `starttime` if set, else `crdate`. A post written ahead of time and released via `starttime` keeps the `crdate` of the day it was written.
+- `dateModified` — the newer of `SYS_LASTCHANGED` (newest change of the page and the content rendered on it) and `tstamp`, never earlier than `datePublished`.
+
+Entities with dates of their own (podcast episodes from the feed, books, reviews) keep them.
 
 ## Repositories
 

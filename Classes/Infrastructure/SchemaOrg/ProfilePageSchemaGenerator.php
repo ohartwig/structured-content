@@ -8,6 +8,7 @@ use Koh\StructuredContent\Infrastructure\SchemaOrg\PersonSchemaBuilder;
 use Koh\StructuredContent\Domain\Contract\AuthoredPagesRepositoryInterface;
 use Koh\StructuredContent\Domain\Contract\ClaimsPageEntityInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
+use Koh\StructuredContent\Domain\Model\PageDates;
 
 /**
  * Emits Schema.org/ProfilePage for author detail pages (`/autor/<slug>`,
@@ -100,22 +101,10 @@ final class ProfilePageSchemaGenerator implements ClaimsPageEntityInterface
             if ('' !== $description) {
                 $entry['description'] = $this->sanitizeText($description);
             }
-            // Published at crdate, the date the article's own BlogPosting node
-            // carries (ArticleSchemaGenerator) and the order of the list.
-            // Modified at the editor-maintained "last updated" date, else the
-            // record's tstamp. tstamp as datePublished made every edit look
-            // like a publication.
-            $published = (int) ($article['crdate'] ?? 0);
-            if ($published > 0) {
-                $entry['datePublished'] = date('c', $published);
-            }
-            $modified = (int) ($article['lastUpdated'] ?? 0);
-            if ($modified <= 0) {
-                $modified = (int) ($article['tstamp'] ?? 0);
-            }
-            if ($modified > 0) {
-                $entry['dateModified'] = date('c', $modified);
-            }
+            // The dates the article's own BlogPosting node carries, see
+            // PageDates. tstamp as datePublished made every edit look like a
+            // publication.
+            $entry = [...$entry, ...PageDates::fromPage($article)->toSchemaProperties()];
             $hasPart[] = $entry;
         }
 

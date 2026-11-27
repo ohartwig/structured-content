@@ -136,15 +136,16 @@ final class AuthorProfileTest extends FunctionalTestCase
     }
 
     /**
-     * Newest publication first. Ordered by tstamp, the oldest post came first
-     * because it was edited last.
+     * Newest publication first, by the date a post is presented with: the
+     * post written first but released last (starttime) leads. Ordered by
+     * tstamp, the oldest post came first because it was edited last.
      */
     #[Test]
     public function theArticlesOfAPersonAreOrderedByPublication(): void
     {
         $pages = (new DoctrineAuthoredPagesRepository($this->get(ConnectionPool::class)))->findByAuthorUid(7);
 
-        self::assertSame([21, 22, 20], array_map(static fn(array $page): int => (int) $page['uid'], $pages));
+        self::assertSame([24, 21, 22, 20], array_map(static fn(array $page): int => (int) $page['uid'], $pages));
     }
 
     #[Test]

@@ -466,6 +466,39 @@ final class ArticleSchemaGeneratorTest extends TestCase
     }
 
     /**
+     * A post written ahead of time and released via starttime is published
+     * on its release date, not on the day it was written, and the last
+     * change of its content counts as its modification.
+     */
+    #[Test]
+    public function aScheduledPostIsPublishedOnItsReleaseDate(): void
+    {
+        $document = $this->generator()->generate(
+            $this->page(['crdate' => 1700000000, 'starttime' => 1720000000, 'tstamp' => 1700000000, 'SYS_LASTCHANGED' => 1730000000]),
+            $this->content(),
+        );
+
+        self::assertSame(date('c', 1720000000), $document->data['datePublished']);
+        self::assertSame(date('c', 1730000000), $document->data['dateModified']);
+    }
+
+    /**
+     * The editor-maintained "last updated" date is the date the site shows
+     * a post with, so it is the publication date.
+     */
+    #[Test]
+    public function theLastUpdatedDateIsThePublicationDate(): void
+    {
+        $document = $this->generator()->generate(
+            $this->page(['crdate' => 1700000000, 'starttime' => 1710000000, 'lastUpdated' => 1720000000, 'tstamp' => 1725000000]),
+            $this->content(),
+        );
+
+        self::assertSame(date('c', 1720000000), $document->data['datePublished']);
+        self::assertSame(date('c', 1725000000), $document->data['dateModified']);
+    }
+
+    /**
      * Der Generator laeuft auch ohne die beiden optionalen Mitspieler — sie
      * sind nicht in jeder Installation verdrahtet, und ein Artikel ohne
      * Kontextangaben ist besser als kein Artikel.

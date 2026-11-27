@@ -6,6 +6,7 @@ namespace Koh\StructuredContent\Infrastructure\Persistence;
 
 use Doctrine\DBAL\ParameterType;
 use Koh\StructuredContent\Domain\Contract\AuthoredPagesRepositoryInterface;
+use Koh\StructuredContent\Domain\Model\PageDates;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -25,7 +26,7 @@ final readonly class DoctrineAuthoredPagesRepository implements AuthoredPagesRep
         $qb = $this->connectionPool->getQueryBuilderForTable('pages');
         $qb->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
 
-        return $qb->select('uid', 'pid', 'title', 'slug', 'description', 'abstract', 'tstamp', 'crdate', 'lastUpdated')
+        $pages = $qb->select('uid', 'pid', 'title', 'slug', 'description', 'abstract', 'tstamp', 'crdate', 'lastUpdated', 'starttime', 'SYS_LASTCHANGED')
             ->from('pages')
             ->where(
                 $qb->expr()->eq(
@@ -55,15 +56,17 @@ final readonly class DoctrineAuthoredPagesRepository implements AuthoredPagesRep
                     ),
                 ),
             )
-            // Newest publication first: crdate is the date the BlogPosting
-            // node gives as datePublished. tstamp listed the most recently
-            // edited pages instead, so fixing a typo in an old post moved it
-            // to the top. The uid keeps posts of the same second in a stable
-            // order.
-            ->orderBy('crdate', 'DESC')
-            ->addOrderBy('uid', 'DESC')
-            ->setMaxResults($limit)
             ->executeQuery()
             ->fetchAllAssociative();
+
+        // Newest publication first, by the date the page is presented with
+        // (PageDates: lastUpdated, else starttime, else crdate) — the date
+        // its BlogPosting node gives as datePublished. tstamp listed the most
+        // recently edited pages instead, so fixing a typo in an old post moved
+        // it to the top. The fallback chain is no single column, so the order
+        // is applied here; a person's pages are few enough to sort in memory.
+        usort($pages, PageDates::newestFirst(...));
+
+        return array_slice($pages, 0, max(0, $limit));
     }
 }

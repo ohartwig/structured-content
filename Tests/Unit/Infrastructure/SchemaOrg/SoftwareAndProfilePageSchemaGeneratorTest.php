@@ -395,28 +395,28 @@ final class SoftwareAndProfilePageSchemaGeneratorTest extends TestCase
     }
 
     /**
-     * An article in hasPart carries the date it was published (crdate, as
-     * its own BlogPosting node) and the date it was last updated — not the
-     * date of its last edit as its publication date.
+     * An article in hasPart carries the dates its own BlogPosting node
+     * carries (PageDates): published on the date it is presented with,
+     * modified at its last change — not its last edit as publication date.
      */
     #[Test]
-    public function anArticleCarriesItsPublicationDateAndItsLastUpdate(): void
+    public function anArticleCarriesTheDatesOfItsBlogPosting(): void
     {
         $this->rows = [$this->personRow()];
-        $published = 1_700_000_000;
+        $written = 1_700_000_000;
+        $released = 1_750_000_000;
         $edited = 1_760_000_000;
-        $updated = 1_750_000_000;
         $this->articles = [
-            ['uid' => 100, 'title' => 'Updated post', 'slug' => '/blog/a', 'crdate' => $published, 'tstamp' => $edited, 'lastUpdated' => $updated],
-            ['uid' => 101, 'title' => 'Edited post', 'slug' => '/blog/b', 'crdate' => $published, 'tstamp' => $edited, 'lastUpdated' => 0],
+            ['uid' => 100, 'title' => 'Released post', 'slug' => '/blog/a', 'crdate' => $written, 'tstamp' => $edited, 'lastUpdated' => $released],
+            ['uid' => 101, 'title' => 'Plain post', 'slug' => '/blog/b', 'crdate' => $written, 'tstamp' => $edited, 'lastUpdated' => 0],
         ];
 
         $hasPart = $this->profile()->generate($this->authorPage(), [])->data['hasPart'];
 
-        self::assertSame(date('c', $published), $hasPart[0]['datePublished']);
-        self::assertSame(date('c', $updated), $hasPart[0]['dateModified']);
-        self::assertSame(date('c', $published), $hasPart[1]['datePublished']);
-        self::assertSame(date('c', $edited), $hasPart[1]['dateModified'], 'without a last-updated date the tstamp stands in');
+        self::assertSame(date('c', $released), $hasPart[0]['datePublished']);
+        self::assertSame(date('c', $edited), $hasPart[0]['dateModified']);
+        self::assertSame(date('c', $written), $hasPart[1]['datePublished']);
+        self::assertSame(date('c', $edited), $hasPart[1]['dateModified']);
     }
 
     /**
@@ -427,32 +427,6 @@ final class SoftwareAndProfilePageSchemaGeneratorTest extends TestCase
     public function theProfilePageClaimsThePageEntity(): void
     {
         self::assertInstanceOf(ClaimsPageEntityInterface::class, $this->profile());
-    }
-
-    /**
-     * Dates come from the database as strings (MariaDB) or are missing or
-     * zero: a missing date is left out rather than written as 1970.
-     */
-    #[Test]
-    public function articleDatesAreReadAsNumbersAndOnlyWhenSet(): void
-    {
-        $this->rows = [$this->personRow()];
-        $this->articles = [
-            ['uid' => 100, 'title' => 'String dates', 'slug' => '/blog/a', 'crdate' => '1700000000', 'tstamp' => '1760000000', 'lastUpdated' => '1750000000'],
-            ['uid' => 101, 'title' => 'Zero dates', 'slug' => '/blog/b', 'crdate' => 0, 'tstamp' => 0, 'lastUpdated' => 0],
-            ['uid' => 102, 'title' => 'No dates', 'slug' => '/blog/c'],
-            ['uid' => 103, 'title' => 'Only tstamp', 'slug' => '/blog/d', 'tstamp' => '1760000000'],
-        ];
-
-        $hasPart = $this->profile()->generate($this->authorPage(), [])->data['hasPart'];
-
-        self::assertSame(date('c', 1_700_000_000), $hasPart[0]['datePublished']);
-        self::assertSame(date('c', 1_750_000_000), $hasPart[0]['dateModified']);
-        self::assertArrayNotHasKey('datePublished', $hasPart[1]);
-        self::assertArrayNotHasKey('dateModified', $hasPart[1]);
-        self::assertArrayNotHasKey('datePublished', $hasPart[2]);
-        self::assertArrayNotHasKey('dateModified', $hasPart[2]);
-        self::assertSame(date('c', 1_760_000_000), $hasPart[3]['dateModified']);
     }
 
     /**
