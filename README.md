@@ -79,7 +79,6 @@ rendered by `priority` (higher = earlier in the JSON-LD block).
 | `Infrastructure/SchemaOrg/SanitizesSchemaTrait` | Strip filter for empty or non-JSON-conformant values |
 | `Infrastructure/SchemaOrg/ContextAndRelationshipsTrait` | Appends AI context + relationships to the schema output |
 
-
 ### Page dates
 
 Every generator that dates the page itself (Article/BlogPosting, WebPage, SoftwareApplication, the auto-detected types, the ProfilePage's `hasPart` and the middleware fallback) uses `Domain/Model/PageDates`:
