@@ -120,6 +120,15 @@ final class JsonLdInjectorMiddleware implements MiddlewareInterface, LoggerAware
         $pageData['_rootPageId'] = $site->getRootPageId();
         $pageData['_rootline'] = $pageInformation->getRootLine();
         $pageData['_routingArguments'] = $routeArguments;
+        // Plugin detail URLs (an author page, an episode) are the page's URL
+        // plus route arguments, in the language being rendered. Generators
+        // have no router; this is the URL the site router builds for them.
+        $pageData['_routeUrl'] = (new RouteUrlBuilder())->build(
+            $site,
+            $siteLanguage instanceof SiteLanguage ? $siteLanguage : null,
+            $pageUid,
+            $routeArguments,
+        );
         if (null !== $siteLanguage) {
             // BCP47 hreflang (e.g. "de-DE", "en-GB") fuer Schema.org inLanguage
             // — Spec fordert Sprach-Region-Format, nicht nur "de" / "en".

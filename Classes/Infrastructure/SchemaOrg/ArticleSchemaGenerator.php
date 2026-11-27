@@ -10,13 +10,14 @@ use Koh\StructuredContent\Application\Service\SchemaTypeResolverService;
 use Koh\StructuredContent\Domain\Contract\CategoryRepositoryInterface;
 use Koh\StructuredContent\Domain\Contract\ContextResolverInterface;
 use Koh\StructuredContent\Domain\Contract\RelationshipRepositoryInterface;
-use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
+use Koh\StructuredContent\Domain\Contract\PageEntityGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
+use Koh\StructuredContent\Domain\Model\PageDates;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-final class ArticleSchemaGenerator implements SchemaGeneratorInterface
+final class ArticleSchemaGenerator implements PageEntityGeneratorInterface
 {
     use SanitizesSchemaTrait;
     use ContextAndRelationshipsTrait;
@@ -170,13 +171,8 @@ final class ArticleSchemaGenerator implements SchemaGeneratorInterface
             }
         }
 
-        if (isset($pageData['crdate']) && '' !== $pageData['crdate']) {
-            $data['datePublished'] = date('c', (int) $pageData['crdate']);
-        }
-
-        if (isset($pageData['tstamp']) && '' !== $pageData['tstamp']) {
-            $data['dateModified'] = date('c', (int) $pageData['tstamp']);
-        }
+        // The dates the page is presented with, see PageDates.
+        $data = [...$data, ...PageDates::fromPage($pageData)->toSchemaProperties()];
 
         // Sprache als BCP47 (de-DE / en-GB) — Spec: konsistent pro Domain.
         $language = trim((string) ($pageData['_language'] ?? ''));

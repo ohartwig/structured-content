@@ -47,7 +47,7 @@ rendered by `priority` (higher = earlier in the JSON-LD block).
 | `DefinedTermSchemaGenerator` | 85 | `DefinedTerm` | `/glossar/{slug}` — dpn-glossary detail page (conditional on `isLoaded('dpn_glossary')`); output contains `alternateName` from synonyms |
 | `PersonPageSchemaGenerator` | 80 | `Person` (standalone) | `/autor/{slug}` — emits the full Person entity with `@id` for cross-page references |
 | `DefinedTermSetSchemaGenerator` | 78 | `DefinedTermSet` | Glossary listing page (`uid == dpnGlossary.settings.detailPage`); `hasDefinedTerm[]` as `@id` references |
-| `ProfilePageSchemaGenerator` | 75 | `ProfilePage` + `mainEntity.@id` + `hasPart` | `/autor/{slug}` — wrapper page with an `@id` reference to the Person (not inline) |
+| `ProfilePageSchemaGenerator` | 75 | `ProfilePage` + `mainEntity.@id` + `hasPart` | `/autor/{slug}` — wrapper page with an `@id` reference to the Person (not inline). `url`/`@id` are the author page URL in the rendered language as the site router builds it (`/en/author/{slug}`); `hasPart` lists the newest articles by publication date with the dates of their BlogPosting nodes (see *Page dates*). Claims the page entity: the WebPage and Article nodes of the same URL are dropped |
 | `ReviewSchemaGenerator` | 68 | `Review` | Pages with the testimonials content block |
 | `PodcastEpisodeSchemaGenerator` | 65 | `PodcastEpisode` | Podcast plugin detail view (with `actor[]` as `@id` references for hosts and guests) |
 | `PodcastSeriesSchemaGenerator` | 60 | `PodcastSeries` | Podcast plugin list view |
@@ -71,13 +71,22 @@ rendered by `priority` (higher = earlier in the JSON-LD block).
 
 | Class | Purpose |
 |---|---|
-| `Application/Service/PersonSchemaBuilder` | `buildFromRow()` — emits a Person with `@id = <siteBase>/autor/<slug>#person`, `url`, `image` (FAL), `worksFor[]`, `sameAs[]` (in the `Label\|URL` pipe format), `knowsAbout`, `knowsLanguage`. `buildPersonReference()` returns a minimal `{@type:Person, @id}` for cross-references. The constant `AUTHOR_PATH = '/autor'` is the single source of truth. |
+| `Application/Service/PersonSchemaBuilder` | `buildFromRow()` — emits a Person with `@id = <siteBase>/autor/<slug>#person`, `url`, `image` (FAL), `worksFor[]`, `sameAs[]` (in the `Label\|URL` pipe format), `knowsAbout`, `knowsLanguage`. `buildPersonReference()` returns a minimal `{@type:Person, @id}` for cross-references. The constant `AUTHOR_PATH = '/autor'` is the single source of truth for the Person `@id`, which is language-independent (the same on every page in every language). Records are read in the language of the request with the frontend overlay (default language when there is no translation); the image comes from the record type's file field named `image` or `*_image` per TCA (Content Blocks: `moselwal_person_image`). |
 | `Application/Service/GlossaryTermService` (v2.4+) | Conditional integration with `featdd/dpn-glossary`. `isAvailable()` is the guard (no database access when the extension is not loaded). `findTermBySlug()`/`findAllTerms()`/`loadFirstDescription()`/`loadSynonyms()`/`resolveGlossaryBasePath()` (from `dpnGlossary.settings.detailPage` → page slug, fallback `/glossar`)/`isGlossaryListingPage()`. Singleton with a per-request cache. |
 | `Infrastructure/SchemaOrg/PageLevelExtraSchemaTrait` (v2.2+) | `applyPageLevelExtras($data, $pageData)` — adds `codeRepository`, `sameAs`, `about` to WebPage/Article/Service. sameAs filters out the own site by host; about merges manual `_aboutEntries` with glossary references from `_glossaryRefs` (v2.4+, additive). |
 | `Infrastructure/SchemaOrg/PersonRoutingArgumentTrait` | Resolves the `person` slug from the `_routingArguments` of the person plugin detail view. Used by PersonPage + ProfilePage. |
 | `Infrastructure/SchemaOrg/PodcastFeedCacheReaderTrait` | Reads cached feed items for podcast schemas without a re-fetch. Cache key `rssfeed_<sha256(feedUrl)>` (in sync with `PodcastFeedService::cacheIdentifierFor()` — previously md5, fixed in v2.0.3). |
 | `Infrastructure/SchemaOrg/SanitizesSchemaTrait` | Strip filter for empty or non-JSON-conformant values |
 | `Infrastructure/SchemaOrg/ContextAndRelationshipsTrait` | Appends AI context + relationships to the schema output |
+
+### Page dates
+
+Every generator that dates the page itself (Article/BlogPosting, WebPage, SoftwareApplication, the auto-detected types, the ProfilePage's `hasPart` and the middleware fallback) uses `Domain/Model/PageDates`:
+
+- `datePublished` — the date the page is presented with: `lastUpdated` if set, else `starttime` if set, else `crdate`. A post written ahead of time and released via `starttime` keeps the `crdate` of the day it was written.
+- `dateModified` — the newer of `SYS_LASTCHANGED` (newest change of the page and the content rendered on it) and `tstamp`, never earlier than `datePublished`.
+
+Entities with dates of their own (podcast episodes from the feed, books, reviews) keep them.
 
 ## Repositories
 

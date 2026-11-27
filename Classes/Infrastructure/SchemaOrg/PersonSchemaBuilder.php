@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Koh\StructuredContent\Infrastructure\SchemaOrg;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use Koh\StructuredContent\Infrastructure\SchemaOrg\SanitizesSchemaTrait;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\LanguageAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
+use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Resource\FileRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\SingletonInterface;
 
@@ -24,15 +29,23 @@ final class PersonSchemaBuilder implements SingletonInterface
     use SanitizesSchemaTrait;
 
     /**
-     * Route-Prefix der Author-Detail-Pages. Definiert in den Site-Route-
-     * Enhancers (config/sites/<site>/config.yaml — Person plugin), hier als
-     * Konstante damit Generators und Builder konsistente @id/url bauen
-     * koennen ohne pro-Site-Setting (alle Sites nutzen aktuell /autor).
+     * Path of the Person entity's identifier below the site's entity base:
+     * `<entityBase>/autor/<slug>#person`.
+     *
+     * This is an identifier, not a link that has to resolve in every
+     * language: the Person is one entity per site, and every page in every
+     * language references it by the same @id. It is the author page URL of
+     * the default language. The URL of the author page in the language being
+     * rendered is the ProfilePage's `url` and comes from the site router (see
+     * ProfilePageSchemaGenerator).
      */
     public const AUTHOR_PATH = '/autor';
 
+    private const TABLE = 'moselwal_person';
+
     public function __construct(
         private readonly ConnectionPool $connectionPool,
+        private readonly ?FileRepository $fileRepository = null,
     ) {}
 
     /**
@@ -200,10 +213,11 @@ final class PersonSchemaBuilder implements SingletonInterface
             $person['url'] = $externalUrl;
         }
 
-        // Person-Portrait aus dem moselwal_person.image-FAL-Reference. Wenn
-        // keine Reference gepflegt, fehlt das Feld. URL-String statt
-        // ImageObject — kompakter, Schema.org-Person akzeptiert beides.
-        $imageUrl = $this->resolvePersonImageUrl((int) ($row['uid'] ?? 0), $siteBase);
+        // Portrait from the record's image field. Without a reference the
+        // property is left out. A URL string rather than an ImageObject:
+        // Schema.org Person accepts both, and the string is enough for the
+        // knowledge-graph use case.
+        $imageUrl = $this->resolvePersonImageUrl($row, $siteBase);
         if ('' !== $imageUrl) {
             $person['image'] = $imageUrl;
         }
@@ -289,7 +303,15 @@ final class PersonSchemaBuilder implements SingletonInterface
     }
 
     /**
-     * Resolve a moselwal_person record by its slug (URL identifier).
+     * Resolve a moselwal_person record by its slug (URL identifier), in the
+     * language of the current request.
+     *
+     * A translation usually carries the slug of its default-language record,
+     * so the lookup is made on the default-language records (and records for
+     * all languages) and the result is overlaid, as the frontend does for any
+     * record. Only when no such record has the slug is a translation in the
+     * current language with that slug taken, and its default-language record
+     * overlaid in turn.
      *
      * @return array<string, mixed>|null
      */
@@ -299,23 +321,39 @@ final class PersonSchemaBuilder implements SingletonInterface
         if ('' === $slug) {
             return null;
         }
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('moselwal_person');
-        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+        $languageField = self::languageField();
 
-        $row = $queryBuilder
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+        $queryBuilder
             ->select('*')
-            ->from('moselwal_person')
+            ->from(self::TABLE)
             ->where(
                 $queryBuilder->expr()->eq(
                     'moselwal_person_slug',
                     $queryBuilder->createNamedParameter($slug),
                 ),
-            )
+            );
+        if ('' !== $languageField) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->in(
+                    $languageField,
+                    $queryBuilder->createNamedParameter([0, -1], ArrayParameterType::INTEGER),
+                ),
+            );
+        }
+        $row = $queryBuilder
             ->setMaxResults(1)
             ->executeQuery()
             ->fetchAssociative();
 
-        return false === $row ? null : $row;
+        if (false !== $row) {
+            return $this->localize($row);
+        }
+
+        $parentUid = $this->findParentOfTranslationBySlug($slug);
+
+        return $parentUid > 0 ? $this->fetchPerson($parentUid) : null;
     }
 
     /**
@@ -345,16 +383,19 @@ final class PersonSchemaBuilder implements SingletonInterface
     }
 
     /**
+     * The record with this uid, overlaid with its translation into the
+     * language of the current request.
+     *
      * @return array<string, mixed>|null
      */
     private function fetchPerson(int $uid): ?array
     {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('moselwal_person');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
         $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
 
         $row = $queryBuilder
             ->select('*')
-            ->from('moselwal_person')
+            ->from(self::TABLE)
             ->where(
                 $queryBuilder->expr()->eq(
                     'uid',
@@ -365,7 +406,94 @@ final class PersonSchemaBuilder implements SingletonInterface
             ->executeQuery()
             ->fetchAssociative();
 
-        return false === $row ? null : $row;
+        return false === $row ? null : $this->localize($row);
+    }
+
+    /**
+     * The default-language uid of a translation in the current language that
+     * carries the slug, 0 if there is none.
+     */
+    private function findParentOfTranslationBySlug(string $slug): int
+    {
+        $languageField = self::languageField();
+        $pointerField = (string) ($GLOBALS['TCA'][self::TABLE]['ctrl']['transOrigPointerField'] ?? '');
+        $languageId = self::currentLanguage()->getContentId();
+        if ('' === $languageField || '' === $pointerField || $languageId <= 0) {
+            return 0;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+        $parent = $queryBuilder
+            ->select($pointerField)
+            ->from(self::TABLE)
+            ->where(
+                $queryBuilder->expr()->eq('moselwal_person_slug', $queryBuilder->createNamedParameter($slug)),
+                $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
+                $queryBuilder->expr()->gt($pointerField, $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchOne();
+
+        return is_numeric($parent) ? (int) $parent : 0;
+    }
+
+    /**
+     * Overlays a default-language row with its translation into the language
+     * of the current request — PageRepository::getLanguageOverlay(), the
+     * frontend's own overlay, so the site language's fallback chain and
+     * overlay mode apply. Without a translation the default-language row is
+     * kept (also for a strict language, which would hide it): a person is
+     * shown in the default language rather than not at all.
+     *
+     * The slug stays the default-language one. It is part of the Person's
+     * @id, and that identifier is the same on every page in every language;
+     * a translation that carries a slug of its own must not split the person
+     * into one entity per language.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    private function localize(array $row): array
+    {
+        if ('' === self::languageField()) {
+            return $row;
+        }
+        $language = self::currentLanguage();
+        if ($language->getContentId() <= 0) {
+            return $row;
+        }
+
+        $overlaid = GeneralUtility::makeInstance(PageRepository::class)
+            ->getLanguageOverlay(self::TABLE, $row, $language);
+        if (null === $overlaid) {
+            return $row;
+        }
+        if (array_key_exists('moselwal_person_slug', $row)) {
+            $overlaid['moselwal_person_slug'] = $row['moselwal_person_slug'];
+        }
+
+        return $overlaid;
+    }
+
+    /**
+     * The language field of the person table, '' when the table is not
+     * translatable (or its TCA is not loaded).
+     */
+    private static function languageField(): string
+    {
+        return (string) ($GLOBALS['TCA'][self::TABLE]['ctrl']['languageField'] ?? '');
+    }
+
+    /**
+     * The language the frontend renders the request in. Read from the context
+     * on every call: the builder is a shared service and outlives a request.
+     */
+    private static function currentLanguage(): LanguageAspect
+    {
+        return GeneralUtility::makeInstance(Context::class)->getAspect('language');
     }
 
     /**
@@ -457,50 +585,86 @@ final class PersonSchemaBuilder implements SingletonInterface
     }
 
     /**
-     * FAL-Resolution fuer das moselwal_person.image-Feld. Returns absolute
-     * URL als String — Schema.org-Person akzeptiert image sowohl als URL
-     * als auch ImageObject; String ist kompakter und reicht fuer den
-     * Knowledge-Graph-Use-Case.
+     * Absolute URL of the person's portrait, '' without one.
+     *
+     * The field is taken from the TCA: the person record type declares it as
+     * `image`, which Content Blocks stores as `moselwal_person_image` (the
+     * table prefix is added to every field). Every file field named `image`
+     * or ending in `_image` qualifies, so a record type registered without
+     * the prefix keeps working. Looking for `image` alone found nothing on
+     * any site and left every Person without an image.
+     *
+     * The file references of a translation hang on the translation's uid;
+     * without any there, the default-language record's portrait is used. The
+     * URL comes from FAL, so a storage other than fileadmin (S3, a CDN) yields
+     * its own public URL; a root-relative URL is resolved against the site.
+     *
+     * @param array<string, mixed> $row
      */
-    private function resolvePersonImageUrl(int $personUid, string $siteBase): string
+    private function resolvePersonImageUrl(array $row, string $siteBase): string
     {
-        if ($personUid <= 0) {
+        $fields = self::imageFields();
+        if ([] === $fields) {
             return '';
         }
-        $qb = $this->connectionPool->getQueryBuilderForTable('sys_file_reference');
-        $qb->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
-        $ref = $qb->select('uid_local')
-            ->from('sys_file_reference')
-            ->where(
-                $qb->expr()->eq('tablenames', $qb->createNamedParameter('moselwal_person')),
-                $qb->expr()->eq('fieldname', $qb->createNamedParameter('image')),
-                $qb->expr()->eq('uid_foreign', $qb->createNamedParameter($personUid, ParameterType::INTEGER)),
-            )
-            ->orderBy('sorting_foreign', 'ASC')
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
-        if (!is_array($ref)) {
+        $uids = array_values(array_unique(array_filter(
+            [(int) ($row['_LOCALIZED_UID'] ?? 0), (int) ($row['uid'] ?? 0)],
+            static fn(int $uid): bool => $uid > 0,
+        )));
+
+        try {
+            $fileRepository = $this->fileRepository ?? GeneralUtility::makeInstance(FileRepository::class);
+            foreach ($uids as $uid) {
+                foreach ($fields as $field) {
+                    $references = $fileRepository->findByRelation(self::TABLE, $field, $uid);
+                    if ([] === $references) {
+                        continue;
+                    }
+                    $publicUrl = trim((string) $references[0]->getPublicUrl());
+                    if ('' === $publicUrl) {
+                        continue;
+                    }
+                    if (1 !== preg_match('#^(https?:)?//#i', $publicUrl)) {
+                        $publicUrl = '/' . ltrim($publicUrl, '/');
+                    }
+
+                    return SiteFileUrl::resolve($publicUrl, $siteBase);
+                }
+            }
+        } catch (\Throwable) {
+            // A missing file or storage costs the image, not the Person.
             return '';
         }
 
-        $fqb = $this->connectionPool->getQueryBuilderForTable('sys_file');
-        $fqb->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
-        $identifier = $fqb->select('identifier')
-            ->from('sys_file')
-            ->where(
-                $fqb->expr()->eq('uid', $fqb->createNamedParameter((int) $ref['uid_local'], ParameterType::INTEGER)),
-            )
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchOne();
-        if (!is_string($identifier) || '' === $identifier) {
-            return '';
+        return '';
+    }
+
+    /**
+     * The file fields of the person table that hold its portrait.
+     *
+     * @return list<string>
+     */
+    private static function imageFields(): array
+    {
+        $columns = $GLOBALS['TCA'][self::TABLE]['columns'] ?? null;
+        if (!is_array($columns)) {
+            return [];
+        }
+        $fields = [];
+        foreach ($columns as $name => $column) {
+            $name = (string) $name;
+            if ('image' !== $name && !str_ends_with($name, '_image')) {
+                continue;
+            }
+            $config = is_array($column) && is_array($column['config'] ?? null) ? $column['config'] : [];
+            $isFileField = 'file' === ($config['type'] ?? null)
+                || ('inline' === ($config['type'] ?? null) && 'sys_file_reference' === ($config['foreign_table'] ?? null));
+            if ($isFileField) {
+                $fields[] = $name;
+            }
         }
 
-        // Storage 1 = fileadmin/ (TYPO3-Default). identifier ist storage-
-        // relativ (z.B. "/user_upload/team/portrait.jpg") → absolute Web-URL.
-        return rtrim($siteBase, '/') . '/fileadmin' . $identifier;
+        return $fields;
     }
 
     /**

@@ -7,10 +7,11 @@ namespace Koh\StructuredContent\Infrastructure\SchemaOrg;
 use Koh\StructuredContent\Application\Service\SchemaTypeResolverService;
 use Koh\StructuredContent\Domain\Contract\ContextResolverInterface;
 use Koh\StructuredContent\Domain\Contract\RelationshipRepositoryInterface;
-use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
+use Koh\StructuredContent\Domain\Contract\PageEntityGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
+use Koh\StructuredContent\Domain\Model\PageDates;
 
-final class WebPageSchemaGenerator implements SchemaGeneratorInterface
+final class WebPageSchemaGenerator implements PageEntityGeneratorInterface
 {
     use SanitizesSchemaTrait;
     use ContextAndRelationshipsTrait;
@@ -133,12 +134,8 @@ final class WebPageSchemaGenerator implements SchemaGeneratorInterface
             $data['inLanguage'] = $language;
         }
 
-        if (isset($pageData['crdate']) && (int) $pageData['crdate'] > 0) {
-            $data['datePublished'] = date('c', (int) $pageData['crdate']);
-        }
-        if (isset($pageData['tstamp']) && (int) $pageData['tstamp'] > 0) {
-            $data['dateModified'] = date('c', (int) $pageData['tstamp']);
-        }
+        // The dates the page is presented with, see PageDates.
+        $data = [...$data, ...PageDates::fromPage($pageData)->toSchemaProperties()];
 
         if ('CollectionPage' === $schemaType) {
             $itemList = $this->buildItemList($contentElements, $siteBase);

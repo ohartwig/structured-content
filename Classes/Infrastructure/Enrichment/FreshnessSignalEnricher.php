@@ -6,6 +6,7 @@ namespace Koh\StructuredContent\Infrastructure\Enrichment;
 
 use Koh\StructuredContent\Domain\Contract\FreshnessEnricherInterface;
 use Koh\StructuredContent\Domain\Model\FreshnessSignal;
+use Koh\StructuredContent\Domain\Model\PageDates;
 
 final class FreshnessSignalEnricher implements FreshnessEnricherInterface
 {
@@ -14,16 +15,11 @@ final class FreshnessSignalEnricher implements FreshnessEnricherInterface
      */
     public function enrich(array $pageData): FreshnessSignal
     {
-        $datePublished = null;
-        $dateModified = null;
-
-        if (isset($pageData['crdate']) && 0 !== (int) $pageData['crdate']) {
-            $datePublished = (new \DateTimeImmutable())->setTimestamp((int) $pageData['crdate']);
-        }
-
-        if (isset($pageData['tstamp']) && 0 !== (int) $pageData['tstamp']) {
-            $dateModified = (new \DateTimeImmutable())->setTimestamp((int) $pageData['tstamp']);
-        }
+        // The same dates the generators emit for the page (PageDates), so a
+        // document that falls back to the page's dates agrees with the rest.
+        $dates = PageDates::fromPage($pageData);
+        $datePublished = $dates->published > 0 ? (new \DateTimeImmutable())->setTimestamp($dates->published) : null;
+        $dateModified = $dates->modified > 0 ? (new \DateTimeImmutable())->setTimestamp($dates->modified) : null;
 
         $frequency = $this->calculateFrequency($pageData);
 

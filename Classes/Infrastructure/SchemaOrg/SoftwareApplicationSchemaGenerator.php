@@ -9,6 +9,7 @@ use Koh\StructuredContent\Domain\Contract\ContextResolverInterface;
 use Koh\StructuredContent\Domain\Contract\RelationshipRepositoryInterface;
 use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
+use Koh\StructuredContent\Domain\Model\PageDates;
 
 /**
  * Emits Schema.org/SoftwareApplication (or SoftwareSourceCode) for
@@ -149,12 +150,8 @@ final class SoftwareApplicationSchemaGenerator implements SchemaGeneratorInterfa
             );
         }
 
-        if (isset($pageData['crdate']) && (int) $pageData['crdate'] > 0) {
-            $data['datePublished'] = date('c', (int) $pageData['crdate']);
-        }
-        if (isset($pageData['tstamp']) && (int) $pageData['tstamp'] > 0) {
-            $data['dateModified'] = date('c', (int) $pageData['tstamp']);
-        }
+        // The dates the page is presented with, see PageDates.
+        $data = [...$data, ...PageDates::fromPage($pageData)->toSchemaProperties()];
 
         if ('' !== $siteBase) {
             $data['publisher'] = [

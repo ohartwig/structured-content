@@ -6,24 +6,23 @@ namespace Koh\StructuredContent\Infrastructure\SchemaOrg;
 
 use Koh\StructuredContent\Infrastructure\SchemaOrg\PersonSchemaBuilder;
 use Koh\StructuredContent\Domain\Contract\AuthoredPagesRepositoryInterface;
-use Koh\StructuredContent\Domain\Contract\SchemaGeneratorInterface;
+use Koh\StructuredContent\Domain\Contract\ClaimsPageEntityInterface;
 use Koh\StructuredContent\Domain\Model\JsonLdDocument;
-
-// PersonSchemaBuilder::AUTHOR_PATH wird unten verwendet — bewusst ueber
-// die Konstante statt hardcoded '/autor', damit beide Generatoren konsistent
-// bleiben wenn der Pfad mal global geaendert wird.
+use Koh\StructuredContent\Domain\Model\PageDates;
 
 /**
- * Emits Schema.org/ProfilePage for /autor/<slug> detail pages.
+ * Emits Schema.org/ProfilePage for author detail pages (`/autor/<slug>`,
+ * `/en/author/<slug>`).
  *
  * Trigger: routing argument tx_contentblockscollection_person.person resolves
  * to a moselwal_person record (via PersonSchemaBuilder::findBySlug). When that
- * record exists, the generator wins over Article/WebPage and emits a
- * ProfilePage with the Person as mainEntity plus a hasPart array of recent
- * articles authored by that person (Reverse-Lookup over
+ * record exists, the generator wins over Article/WebPage — it claims the page
+ * entity (ClaimsPageEntityInterface), so SchemaOrgService drops their nodes
+ * for this URL — and emits a ProfilePage with the Person as mainEntity plus a
+ * hasPart array of the person's newest articles (reverse lookup over
  * pages.tx_structuredcontent_author_records).
  */
-final class ProfilePageSchemaGenerator implements SchemaGeneratorInterface
+final class ProfilePageSchemaGenerator implements ClaimsPageEntityInterface
 {
     use SanitizesSchemaTrait;
     use PersonRoutingArgumentTrait;
@@ -67,16 +66,18 @@ final class ProfilePageSchemaGenerator implements SchemaGeneratorInterface
         // (which may already be the numeric UID).
         $slug = (string) ($row['moselwal_person_slug'] ?? '');
 
-        // Die volle Person-Entity emittiert PersonPageSchemaGenerator parallel
-        // im selben Graph — hier nur @id-Ref damit der Output nicht doppelt
-        // serialisiert wird. Crawler resolven mainEntity.@id zum Person-Knoten.
-        $authorUrl = '' !== $siteBase && '' !== $slug
-            ? $siteBase . PersonSchemaBuilder::AUTHOR_PATH . '/' . $slug
-            : '';
-        // The Person is a site-wide entity: its @id carries no language prefix.
+        // The full Person entity is emitted by PersonPageSchemaGenerator in the
+        // same graph; mainEntity is only its @id. The Person is a site-wide
+        // entity: its @id carries no language prefix and is the same on every
+        // page in every language.
         $personRef = '' !== $entityBase && '' !== $slug
             ? ['@id' => $entityBase . PersonSchemaBuilder::AUTHOR_PATH . '/' . $slug . '#person']
             : null;
+        // The ProfilePage is the page being rendered, so its URL is that
+        // page's URL in the language being rendered (`/en/author/<slug>`), not
+        // the Person's identifier path below the language base, which
+        // produced `/en/autor/<slug>` — a 404.
+        $profileUrl = $this->resolveProfileUrl($pageData, $siteBase, $slug);
 
         $languageId = (int) ($pageData['sys_language_uid'] ?? 0);
         $articles = $this->authoredPagesRepository->findByAuthorUid((int) $row['uid'], $languageId, 50);
@@ -100,21 +101,19 @@ final class ProfilePageSchemaGenerator implements SchemaGeneratorInterface
             if ('' !== $description) {
                 $entry['description'] = $this->sanitizeText($description);
             }
-            $tstamp = (int) ($article['tstamp'] ?? 0);
-            if ($tstamp > 0) {
-                $entry['datePublished'] = date('c', $tstamp);
-            }
+            // The dates the article's own BlogPosting node carries, see
+            // PageDates. tstamp as datePublished made every edit look like a
+            // publication.
+            $entry = [...$entry, ...PageDates::fromPage($article)->toSchemaProperties()];
             $hasPart[] = $entry;
         }
 
         $data = [];
-        // Eigener @id mit #webpage-Fragment — damit der Graph-Builder den
-        // ProfilePage-Knoten dieser Detail-URL nicht mit dem WebPage-Knoten
-        // verwechselt, den WebPageSchemaGenerator parallel fuer dieselbe
-        // Page-UID emittiert (er nutzt den Container-Slug, daher kein
-        // @id-Clash). Pattern matched PersonPageSchemaGenerator (#person).
-        if ('' !== $authorUrl) {
-            $data['@id'] = $authorUrl . '#webpage';
+        // The page entity of this URL: `<url>#webpage`, the pattern every
+        // page entity follows. The competing WebPage and Article nodes of the
+        // container page are dropped (ClaimsPageEntityInterface).
+        if ('' !== $profileUrl) {
+            $data['@id'] = $profileUrl . '#webpage';
         }
         if (null !== $personRef) {
             $data['mainEntity'] = $personRef;
@@ -125,8 +124,8 @@ final class ProfilePageSchemaGenerator implements SchemaGeneratorInterface
         $last = trim((string) ($row['moselwal_person_lastname'] ?? ''));
         $displayName = trim($first . ' ' . $last);
         $data['name'] = '' !== $displayName ? $this->sanitizeText($displayName) : $slug;
-        if ('' !== $authorUrl) {
-            $data['url'] = $authorUrl;
+        if ('' !== $profileUrl) {
+            $data['url'] = $profileUrl;
         }
         if ('' !== $siteBase) {
             $data['isPartOf'] = ['@id' => $entityBase . '#website'];
@@ -148,6 +147,31 @@ final class ProfilePageSchemaGenerator implements SchemaGeneratorInterface
         }
 
         return new JsonLdDocument('ProfilePage', $data);
+    }
+
+    /**
+     * The URL of the author page being rendered: the URL the site router
+     * builds for the page and its route arguments in the current language
+     * (`_routeUrl`, set by the middleware), so the translated page slug and
+     * the route enhancer's path apply. Without it — a caller outside the
+     * middleware — the page's own slug below the language base stands in,
+     * followed by the person's slug, which is the shape of the `/{person}`
+     * route the plugin ships with.
+     *
+     * @param array<string, mixed> $pageData
+     */
+    private function resolveProfileUrl(array $pageData, string $siteBase, string $slug): string
+    {
+        $routeUrl = trim((string) ($pageData['_routeUrl'] ?? ''));
+        if (1 === preg_match('#^https?://#i', $routeUrl)) {
+            return $routeUrl;
+        }
+        if ('' === $siteBase || '' === $slug) {
+            return '';
+        }
+        $pageSlug = rtrim((string) ($pageData['slug'] ?? ''), '/');
+
+        return $siteBase . ('' === $pageSlug ? '' : '/' . ltrim($pageSlug, '/')) . '/' . $slug;
     }
 
     public function getPriority(): int

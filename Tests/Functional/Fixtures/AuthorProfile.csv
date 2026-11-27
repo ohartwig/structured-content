@@ -1,0 +1,27 @@
+"pages"
+,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent","deleted","hidden","crdate","tstamp","lastUpdated","starttime","tx_structuredcontent_author_records","tx_structuredcontent_schema_type"
+,1,0,Root,/,1,0,0,0,0,1600000000,1600000000,0,0,,
+,2,1,Autor,/autor,1,0,0,0,0,1600000000,1600000000,0,0,,BlogPosting
+,3,1,Author,/author,1,1,2,0,0,1600000000,1600000000,0,0,,BlogPosting
+,5,1,Personen,/personen,254,0,0,0,0,1600000000,1600000000,0,0,,
+,20,1,"Oldest post, edited last",/blog/oldest,1,0,0,0,0,1700000000,1790000000,0,0,7,
+,21,1,Newest post,/blog/newest,1,0,0,0,0,1720000000,1720000000,0,0,7,
+,22,1,Middle post,/blog/middle,1,0,0,0,0,1710000000,1710000000,1715000000,0,"9,7",
+,24,1,"Written first, released last",/blog/scheduled,1,0,0,0,0,1690000000,1690000000,0,1725000000,7,
+,23,1,Post by somebody else,/blog/other,1,0,0,0,0,1730000000,1730000000,0,0,9,
+"moselwal_person"
+,"uid","pid","sys_language_uid","l10n_parent","deleted","hidden","moselwal_person_firstname","moselwal_person_lastname","moselwal_person_slug","moselwal_person_job_title","moselwal_person_bio","moselwal_person_image"
+,7,5,0,0,0,0,"Ada","Lovelace","ada-lovelace","Mathematikerin","Schrieb das erste Programm.",1
+,8,5,1,7,0,0,"Ada","Lovelace","ada-lovelace","Mathematician","Wrote the first program.",0
+,9,5,0,0,0,0,"Grace","Hopper","grace-hopper","Informatikerin","Erfand den Compiler.",0
+,10,5,0,0,0,0,"Alan","Turing","alan-turing","Informatiker","Beschrieb die Turingmaschine.",0
+,11,5,1,10,0,0,"Alan","Turing","alan-turing-en","Computer scientist","Described the Turing machine.",0
+"sys_file_storage"
+,"uid","pid","name","driver","configuration","is_default","is_browsable","is_public","is_writable","is_online"
+,1,0,"fileadmin","Local","<?xml version=""1.0"" encoding=""utf-8"" standalone=""yes"" ?><T3FlexForms><data><sheet index=""sDEF""><language index=""lDEF""><field index=""basePath""><value index=""vDEF"">fileadmin/</value></field><field index=""pathType""><value index=""vDEF"">relative</value></field><field index=""caseSensitive""><value index=""vDEF"">1</value></field></language></sheet></data></T3FlexForms>",1,1,1,1,1
+"sys_file"
+,"uid","pid","storage","type","identifier","identifier_hash","folder_hash","name","extension","mime_type","size"
+,1,0,1,2,"/team/ada.jpg","h1","f1","ada.jpg","jpg","image/jpeg",1024
+"sys_file_reference"
+,"uid","pid","uid_local","uid_foreign","tablenames","fieldname","sorting_foreign","sys_language_uid","deleted","hidden"
+,1,5,1,7,"moselwal_person","moselwal_person_image",1,0,0,0
